@@ -30,15 +30,40 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    /* Hide scrollbar cleanly */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-toast {
+      animation: slideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center sm:p-4">
 
-  <!-- Conteneur Mobile-First -->
-  <div id="app-shell" class="w-full sm:w-[420px] h-screen sm:h-[820px] bg-white sm:rounded-[32px] sm:shadow-2xl flex flex-col overflow-hidden relative border border-gray-100">
+  <div id="app-shell" class="w-full sm:w-[420px] h-screen sm:h-[830px] bg-white sm:rounded-[32px] sm:shadow-2xl flex flex-col overflow-hidden relative border border-gray-100">
+
+    <!-- ==================== BANNIÈRE NOTIFICATION TEMPS RÉEL ==================== -->
+    <div id="live-toast" class="hidden absolute top-3 inset-x-3 z-50 bg-gray-900/95 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-2xl border border-white/10 animate-toast">
+      <div class="flex items-center gap-3">
+        <div class="relative shrink-0">
+          <img id="toast-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-rose-500" />
+          <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full gradient-brand flex items-center justify-center text-[10px]">💖</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p id="toast-title" class="text-xs font-extrabold text-rose-400 uppercase tracking-wide">Quelqu'un t'a liké !</p>
+          <p id="toast-body" class="text-xs text-gray-200 truncate mt-0.5"></p>
+        </div>
+        <button id="toast-action-btn" class="px-3 py-1.5 gradient-brand rounded-xl text-xs font-bold shrink-0 shadow">
+          Voir
+        </button>
+        <button onclick="hideToast()" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
 
     <!-- ==================== ÉCRAN AUTHENTIFICATION ==================== -->
     <div id="auth-view" class="flex-1 flex flex-col overflow-y-auto no-scrollbar p-6">
@@ -47,10 +72,9 @@
           <i data-lucide="flame" class="w-8 h-8 text-white fill-white"></i>
         </div>
         <h1 class="text-3xl font-extrabold text-brand tracking-tight">Étincelle</h1>
-        <p class="text-sm text-gray-500 mt-1">Crée ton profil et rencontre des personnes près de chez toi.</p>
+        <p class="text-sm text-gray-500 mt-1">Crée ton profil et discute en direct avec les membres en ligne.</p>
       </div>
 
-      <!-- Onglets Connexion / Inscription -->
       <div class="grid grid-cols-2 bg-gray-100 p-1 rounded-xl mb-5">
         <button id="tab-login" onclick="switchAuthMode('login')" class="py-2 text-sm font-bold rounded-lg bg-white text-gray-900 shadow-sm transition">
           Connexion
@@ -77,24 +101,19 @@
         <button type="submit" class="w-full py-3.5 gradient-brand text-white font-bold rounded-xl shadow-lg shadow-rose-200 hover:opacity-95 transition">
           Se connecter
         </button>
-
-        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-500 mt-4">
-          <p class="font-semibold text-gray-700 mb-1">Comptes de test prêts à l'emploi :</p>
-          <p>• <span class="font-mono">camille@demo.fr</span> / <span class="font-mono">demo1234</span></p>
-          <p>• <span class="font-mono">lucas@demo.fr</span> / <span class="font-mono">demo1234</span></p>
-        </div>
       </form>
 
-      <!-- Formulaire Inscription -->
+      <!-- Formulaire Inscription (avec galerie multi-photos) -->
       <form id="register-form" onsubmit="handleRegister(event)" class="hidden space-y-3 pb-6">
-        <div class="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100">
-          <img id="reg-preview" src="https://api.dicebear.com/9.x/notionists/svg?seed=NewUser&backgroundColor=ffd5dc"
-            class="w-16 h-16 rounded-full object-cover border-2 border-rose-400 bg-white" />
-          <div class="flex-1">
-            <label class="block text-xs font-bold text-gray-800 mb-1">Photo de profil</label>
-            <input type="file" id="reg-photo" accept="image/*" onchange="previewImage(event, 'reg-preview')"
-              class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100" />
+        <div class="bg-gray-50 p-3 rounded-2xl border border-gray-100 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-gray-800">Tes photos (jusqu'à 4 photos)</label>
+            <label class="cursor-pointer text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1 rounded-full hover:bg-rose-100 transition">
+              + Ajouter des photos
+              <input type="file" id="reg-photo" accept="image/*" multiple class="hidden" onchange="handleMultiPhotoSelect(event, 'reg')" />
+            </label>
           </div>
+          <div id="reg-photos-grid" class="grid grid-cols-4 gap-2"></div>
         </div>
 
         <div class="grid grid-cols-3 gap-2">
@@ -105,7 +124,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-700 mb-1">Âge *</label>
-            <input type="number" id="reg-age" min="18" max="99" required placeholder="25"
+            <input type="number" id="reg-age" min="18" max="99" required placeholder="22"
               class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-rose-500 text-sm" />
           </div>
         </div>
@@ -122,8 +141,8 @@
           <div>
             <label class="block text-xs font-semibold text-gray-700 mb-1">Je recherche</label>
             <select id="reg-interested" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-white">
-              <option value="tous">Tout le monde</option>
               <option value="femme">Femmes</option>
+              <option value="tous">Tout le monde</option>
               <option value="homme">Hommes</option>
             </select>
           </div>
@@ -136,8 +155,8 @@
               class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Métier</label>
-            <input type="text" id="reg-job" placeholder="Designer"
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Métier / Études</label>
+            <input type="text" id="reg-job" placeholder="Étudiant"
               class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm" />
           </div>
         </div>
@@ -183,41 +202,58 @@
           </div>
           <span class="font-extrabold text-xl text-brand tracking-tight">Étincelle</span>
         </div>
-        <div class="flex items-center gap-2">
-          <span id="header-username" class="text-xs font-semibold text-gray-500"></span>
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            En ligne
+          </span>
           <img id="header-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-gray-200" />
         </div>
       </header>
 
-      <!-- VUE 1 : DÉCOUVRIR (SWIPE) -->
+      <!-- VUE 1 : DÉCOUVRIR (CARROUSEL MULTI-PHOTOS + SWIPE + BRISE-GLACE) -->
       <section id="view-discover" class="flex-1 flex flex-col p-4 overflow-hidden">
-        <div id="card-container" class="relative flex-1 w-full">
-          <!-- Cartes injectées dynamiquement -->
-        </div>
+        <div id="card-container" class="relative flex-1 w-full"></div>
 
         <!-- Boutons d'action -->
-        <div id="swipe-controls" class="pt-4 pb-1 flex items-center justify-center gap-5 shrink-0">
-          <button onclick="triggerSwipe('pass')" aria-label="Passer"
+        <div id="swipe-controls" class="pt-3.5 pb-1 flex items-center justify-center gap-4 shrink-0">
+          <button onclick="triggerSwipe('pass')" aria-label="Passer" title="Passer"
             class="w-14 h-14 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-rose-500 hover:scale-110 active:scale-95 transition">
             <i data-lucide="x" class="w-7 h-7 stroke-[2.5]"></i>
           </button>
-          <button onclick="triggerSwipe('superlike')" aria-label="Super Like"
+          <button onclick="openIcebreakerModal('sa photo')" aria-label="Brise-glace" title="Envoyer un brise-glace avant le match"
+            class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 shadow-md flex items-center justify-center text-amber-500 hover:scale-110 active:scale-95 transition">
+            <i data-lucide="message-square-plus" class="w-5 h-5"></i>
+          </button>
+          <button onclick="triggerSwipe('superlike')" aria-label="Super Like" title="Super Like"
             class="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-sky-500 hover:scale-110 active:scale-95 transition">
             <i data-lucide="star" class="w-6 h-6 fill-sky-500"></i>
           </button>
-          <button onclick="triggerSwipe('like')" aria-label="J'aime"
+          <button onclick="triggerSwipe('like')" aria-label="J'aime" title="J'aime"
             class="w-14 h-14 rounded-full gradient-brand shadow-lg shadow-rose-200 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition">
             <i data-lucide="heart" class="w-7 h-7 fill-white"></i>
           </button>
         </div>
       </section>
 
-      <!-- VUE 2 : MATCHS & MESSAGES -->
+      <!-- VUE 2 : LIKES REÇUS, MATCHS & MESSAGES -->
       <section id="view-matches" class="hidden flex-1 flex flex-col overflow-hidden">
-        <!-- Liste des matchs -->
-        <div id="matches-list-panel" class="flex-1 overflow-y-auto p-4 space-y-4">
-          <h2 class="text-xs font-extrabold uppercase tracking-wider text-rose-500">Tes Matchs</h2>
-          <div id="matches-list" class="space-y-2"></div>
+        <div id="matches-list-panel" class="flex-1 overflow-y-auto p-4 space-y-5">
+          <div>
+            <div class="flex items-center justify-between mb-2.5">
+              <h2 class="text-xs font-extrabold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                Likes & Brise-glaces reçus
+              </h2>
+              <span id="likes-count-pill" class="text-[11px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="likes-received-list" class="flex gap-3 overflow-x-auto no-scrollbar pb-1"></div>
+          </div>
+
+          <div>
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-rose-500 mb-2.5">Tes Matchs</h2>
+            <div id="matches-list" class="space-y-2"></div>
+          </div>
         </div>
 
         <!-- Fenêtre de Chat -->
@@ -226,11 +262,19 @@
             <button onclick="closeChat()" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-600">
               <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </button>
-            <img id="chat-partner-avatar" src="" class="w-10 h-10 rounded-full object-cover" />
-            <div class="flex-1 min-w-0">
-              <h3 id="chat-partner-name" class="font-bold text-gray-900 text-sm truncate"></h3>
-              <p id="chat-typing-status" class="text-xs text-emerald-500 font-medium h-4"></p>
+            <div onclick="openPartnerAlbumModal()" class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+              <div class="relative shrink-0">
+                <img id="chat-partner-avatar" src="" class="w-10 h-10 rounded-full object-cover" />
+                <span id="chat-partner-online-dot" class="hidden absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 id="chat-partner-name" class="font-bold text-gray-900 text-sm truncate"></h3>
+                <p id="chat-typing-status" class="text-xs text-emerald-600 font-medium h-4"></p>
+              </div>
             </div>
+            <button onclick="openPartnerAlbumModal()" title="Voir ses photos" class="p-2 rounded-full hover:bg-gray-100 text-gray-500">
+              <i data-lucide="images" class="w-4 h-4"></i>
+            </button>
           </div>
 
           <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2.5 bg-gray-50"></div>
@@ -245,14 +289,17 @@
         </div>
       </section>
 
-      <!-- VUE 3 : MON PROFIL -->
+      <!-- VUE 3 : MON PROFIL (MULTI-PHOTOS) -->
       <section id="view-profile" class="hidden flex-1 overflow-y-auto p-5 space-y-4">
-        <div class="flex flex-col items-center text-center">
-          <img id="prof-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-rose-500 shadow-md mb-2" />
-          <label class="cursor-pointer text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full hover:bg-rose-100 transition">
-            Changer ma photo
-            <input type="file" id="prof-photo" accept="image/*" class="hidden" onchange="previewImage(event, 'prof-preview')" />
-          </label>
+        <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-800">Mes photos (jusqu'à 4)</span>
+            <label class="cursor-pointer text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1 rounded-full hover:bg-rose-100 transition">
+              + Ajouter
+              <input type="file" id="prof-photo" accept="image/*" multiple class="hidden" onchange="handleMultiPhotoSelect(event, 'prof')" />
+            </label>
+          </div>
+          <div id="prof-photos-grid" class="grid grid-cols-4 gap-2"></div>
         </div>
 
         <form onsubmit="handleUpdateProfile(event)" class="space-y-3">
@@ -279,8 +326,8 @@
             <div>
               <label class="block text-xs font-semibold text-gray-600 mb-1">Je recherche</label>
               <select id="prof-interested" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-white">
-                <option value="tous">Tout le monde</option>
                 <option value="femme">Femmes</option>
+                <option value="tous">Tout le monde</option>
                 <option value="homme">Hommes</option>
               </select>
             </div>
@@ -326,13 +373,86 @@
         <button onclick="switchTab('matches')" id="nav-matches" class="relative flex flex-col items-center gap-1 text-gray-400 font-semibold text-xs">
           <i data-lucide="message-circle" class="w-5 h-5"></i>
           <span>Messages</span>
-          <span id="unread-badge" class="hidden absolute top-0 right-9 w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <span id="unread-badge" class="hidden absolute top-0 right-9 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">!</span>
         </button>
         <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-1 text-gray-400 font-semibold text-xs">
           <i data-lucide="user" class="w-5 h-5"></i>
           <span>Profil</span>
         </button>
       </nav>
+    </div>
+
+    <!-- ==================== MODALE GALERIE DU PROFIL EN CHAT ==================== -->
+    <div id="album-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
+        <div class="p-4 flex items-center justify-between border-b border-gray-100">
+          <h3 id="album-title" class="font-extrabold text-gray-900 text-sm">Profil</h3>
+          <button onclick="closePartnerAlbumModal()" class="p-1 rounded-full hover:bg-gray-100 text-gray-500">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="p-4 space-y-3 max-h-[75vh] overflow-y-auto">
+          <div id="album-photos" class="grid grid-cols-2 gap-2"></div>
+          <p id="album-meta" class="text-xs font-semibold text-gray-600"></p>
+          <p id="album-bio" class="text-xs text-gray-700 bg-gray-50 p-3 rounded-2xl"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODALE BRISE-GLACE AVANT LE MATCH ==================== -->
+    <div id="icebreaker-modal" class="hidden absolute inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+      <div class="w-full bg-white rounded-3xl p-5 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <img id="ice-partner-img" src="" class="w-11 h-11 rounded-full object-cover border-2 border-amber-400" />
+            <div>
+              <h3 id="ice-title" class="font-extrabold text-gray-900 text-sm">Brise-glace pour ...</h3>
+              <p class="text-[11px] text-gray-500">Envoie un compliment avant même de matcher !</p>
+            </div>
+          </div>
+          <button onclick="closeIcebreakerModal()" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-500">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl">
+          <button type="button" id="ice-target-photo" onclick="setIcebreakerTarget('sa photo')"
+            class="py-1.5 text-xs font-bold rounded-lg bg-white text-gray-900 shadow-sm">
+            📸 Réagir à sa photo
+          </button>
+          <button type="button" id="ice-target-bio" onclick="setIcebreakerTarget('sa bio')"
+            class="py-1.5 text-xs font-bold rounded-lg text-gray-500">
+            ✍️ Réagir à sa bio
+          </button>
+        </div>
+
+        <div class="space-y-1.5">
+          <p class="text-[11px] font-bold text-gray-500 uppercase">Idées rapides en 1 clic :</p>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="pickIceSuggestion('Super photo ! Tu étais où sur ce cliché ? 🔥')"
+              class="text-left text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-1.5 rounded-xl border border-amber-200 transition">
+              Super photo ! Tu étais où ? 🔥
+            </button>
+            <button type="button" onclick="pickIceSuggestion('J’adore ton énergie ! On va prendre un café ? ☕')"
+              class="text-left text-xs bg-rose-50 hover:bg-rose-100 text-rose-900 px-3 py-1.5 rounded-xl border border-rose-200 transition">
+              J’adore ton énergie ! Un café ? ☕
+            </button>
+            <button type="button" onclick="pickIceSuggestion('Ta bio m’a fait sourire, on a plein de points communs !')"
+              class="text-left text-xs bg-sky-50 hover:bg-sky-100 text-sky-900 px-3 py-1.5 rounded-xl border border-sky-200 transition">
+              Ta bio m’a fait sourire 😊
+            </button>
+          </div>
+        </div>
+
+        <form onsubmit="submitIcebreaker(event)" class="space-y-3">
+          <input type="text" id="ice-input" required maxlength="250" placeholder="Écris ton compliment personnalisé..."
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-amber-500" />
+          <button type="submit" class="w-full py-3 gradient-brand text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>Envoyer le like + brise-glace</span>
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- ==================== MODALE "C'EST UN MATCH !" ==================== -->
@@ -360,12 +480,20 @@
     let token = localStorage.getItem('etincelle_token') || null;
     let currentUser = null;
     let profiles = [];
+    let currentPhotoIdx = 0; // Index de la photo affichée sur la carte du dessus
+    let likesReceived = [];
     let activeMatchId = null;
+    let activeChatPartner = null;
     let socket = null;
     let typingTimeout = null;
+    let onlineUserIds = new Set();
+    let regPhotosList = [];
+    let profPhotosList = [];
+    let currentIceTarget = 'sa photo';
+    let toastTimer = null;
 
-    // Initialisation au chargement
     window.addEventListener('DOMContentLoaded', async () => {
+      renderPhotoSlots('reg');
       lucide.createIcons();
       if (token) {
         try {
@@ -378,7 +506,6 @@
       }
     });
 
-    // Helper API avec JWT
     async function api(url, options = {}) {
       const headers = options.headers || {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -389,6 +516,85 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur réseau');
       return data;
+    }
+
+    // ==================== GESTION MULTI-PHOTOS (INSCRIPTION & PROFIL) ====================
+
+    function compressImageFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxSize = 520;
+            let w = img.width;
+            let h = img.height;
+            if (w > h && w > maxSize) {
+              h = Math.round((h * maxSize) / w);
+              w = maxSize;
+            } else if (h >= w && h > maxSize) {
+              w = Math.round((w * maxSize) / h);
+              h = maxSize;
+            }
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.78));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleMultiPhotoSelect(event, mode) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      const list = mode === 'reg' ? regPhotosList : profPhotosList;
+      for (const f of files) {
+        if (list.length >= 4) break;
+        const dataUrl = await compressImageFile(f);
+        list.push(dataUrl);
+      }
+      event.target.value = '';
+      renderPhotoSlots(mode);
+    }
+
+    function removePhotoSlot(mode, index) {
+      const list = mode === 'reg' ? regPhotosList : profPhotosList;
+      list.splice(index, 1);
+      renderPhotoSlots(mode);
+    }
+
+    function renderPhotoSlots(mode) {
+      const list = mode === 'reg' ? regPhotosList : profPhotosList;
+      const grid = document.getElementById(`${mode}-photos-grid`);
+      if (!grid) return;
+
+      let html = '';
+      for (let i = 0; i < 4; i++) {
+        if (list[i]) {
+          html += `
+            <div class="relative aspect-[3/4] rounded-xl overflow-hidden border-2 ${i === 0 ? 'border-rose-500' : 'border-gray-200'} bg-gray-100">
+              <img src="${list[i]}" class="w-full h-full object-cover" />
+              <button type="button" onclick="removePhotoSlot('${mode}', ${i})"
+                class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] font-bold">
+                ✕
+              </button>
+              ${i === 0 ? `<span class="absolute bottom-1 left-1 bg-rose-500 text-white text-[9px] font-bold px-1.5 rounded">Principale</span>` : ''}
+            </div>
+          `;
+        } else {
+          html += `
+            <label class="cursor-pointer aspect-[3/4] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-rose-300 hover:text-rose-500 transition">
+              <span class="text-lg font-bold">+</span>
+              <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiPhotoSelect(event, '${mode}')" />
+            </label>
+          `;
+        }
+      }
+      grid.innerHTML = html;
     }
 
     // ==================== AUTH ====================
@@ -412,16 +618,6 @@
       el.classList.remove('hidden');
     }
 
-    function previewImage(event, targetImgId) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById(targetImgId).src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
     async function handleLogin(e) {
       e.preventDefault();
       try {
@@ -443,25 +639,23 @@
     async function handleRegister(e) {
       e.preventDefault();
       try {
-        const fd = new FormData();
-        fd.append('name', document.getElementById('reg-name').value);
-        fd.append('age', document.getElementById('reg-age').value);
-        fd.append('gender', document.getElementById('reg-gender').value);
-        fd.append('interested_in', document.getElementById('reg-interested').value);
-        fd.append('city', document.getElementById('reg-city').value);
-        fd.append('job', document.getElementById('reg-job').value);
-        fd.append('bio', document.getElementById('reg-bio').value);
-        fd.append('interests', document.getElementById('reg-interests').value);
-        fd.append('email', document.getElementById('reg-email').value);
-        fd.append('password', document.getElementById('reg-password').value);
-        const photoInput = document.getElementById('reg-photo');
-        if (photoInput.files[0]) {
-          fd.append('photo', photoInput.files[0]);
-        }
+        const payload = {
+          name: document.getElementById('reg-name').value,
+          age: document.getElementById('reg-age').value,
+          gender: document.getElementById('reg-gender').value,
+          interested_in: document.getElementById('reg-interested').value,
+          city: document.getElementById('reg-city').value,
+          job: document.getElementById('reg-job').value,
+          bio: document.getElementById('reg-bio').value,
+          interests: document.getElementById('reg-interests').value,
+          email: document.getElementById('reg-email').value,
+          password: document.getElementById('reg-password').value,
+          photos_data: regPhotosList
+        };
 
         const data = await api('/api/auth/register', {
           method: 'POST',
-          body: fd
+          body: JSON.stringify(payload)
         });
         token = data.token;
         currentUser = data.user;
@@ -481,26 +675,28 @@
       document.getElementById('auth-view').classList.remove('hidden');
     }
 
-    // ==================== ENTRÉE DANS L'APP ====================
+    // ==================== ENTRÉE & SOCKET TEMPS RÉEL ====================
 
     async function enterApp() {
       document.getElementById('auth-view').classList.add('hidden');
       document.getElementById('main-view').classList.remove('hidden');
       syncUserUI();
       connectSocket();
-      await loadProfiles();
-      await loadMatches();
+      await Promise.all([loadProfiles(), loadLikesReceived(), loadMatches()]);
       lucide.createIcons();
     }
 
     function syncUserUI() {
-      document.getElementById('header-username').textContent = currentUser.name;
       document.getElementById('header-avatar').src = currentUser.photo_url;
-      document.getElementById('prof-preview').src = currentUser.photo_url;
+      profPhotosList = Array.isArray(currentUser.photos) && currentUser.photos.length
+        ? [...currentUser.photos]
+        : (currentUser.photo_url ? [currentUser.photo_url] : []);
+      renderPhotoSlots('prof');
+
       document.getElementById('prof-name').value = currentUser.name || '';
       document.getElementById('prof-age').value = currentUser.age || 25;
       document.getElementById('prof-gender').value = currentUser.gender || 'autre';
-      document.getElementById('prof-interested').value = currentUser.interested_in || 'tous';
+      document.getElementById('prof-interested').value = currentUser.interested_in || 'femme';
       document.getElementById('prof-city').value = currentUser.city || '';
       document.getElementById('prof-job').value = currentUser.job || '';
       document.getElementById('prof-bio').value = currentUser.bio || '';
@@ -511,9 +707,28 @@
       if (socket) socket.disconnect();
       socket = io({ auth: { token } });
 
+      socket.on('online_users', (ids) => {
+        onlineUserIds = new Set((ids || []).map(Number));
+        updateOnlineIndicators();
+      });
+
+      socket.on('user_status', ({ userId, online }) => {
+        const id = Number(userId);
+        if (online) onlineUserIds.add(id);
+        else onlineUserIds.delete(id);
+        updateOnlineIndicators();
+      });
+
+      socket.on('incoming_like', ({ fromUser, direction, icebreaker, icebreakerTarget }) => {
+        loadLikesReceived();
+        loadProfiles();
+        showIncomingLikeToast(fromUser, direction, icebreaker, icebreakerTarget);
+      });
+
       socket.on('new_match', ({ matchId, partner }) => {
+        loadLikesReceived();
         loadMatches();
-        document.getElementById('unread-badge').classList.remove('hidden');
+        showUnreadBadge();
         openMatchModal(matchId, partner);
       });
 
@@ -526,16 +741,83 @@
 
       socket.on('message_notification', ({ matchId }) => {
         if (activeMatchId !== matchId) {
-          document.getElementById('unread-badge').classList.remove('hidden');
+          showUnreadBadge();
           loadMatches();
         }
       });
 
       socket.on('partner_typing', ({ matchId, isTyping }) => {
         if (activeMatchId === matchId) {
-          document.getElementById('chat-typing-status').textContent = isTyping ? 'En train d’écrire...' : '';
+          if (isTyping) {
+            document.getElementById('chat-typing-status').textContent = 'En train d’écrire...';
+          } else {
+            const isOnline = activeChatPartner && onlineUserIds.has(Number(activeChatPartner.id));
+            document.getElementById('chat-typing-status').textContent = isOnline ? 'En ligne maintenant' : '';
+          }
         }
       });
+    }
+
+    function updateOnlineIndicators() {
+      renderDeck();
+      renderLikesReceived();
+      loadMatches();
+      if (activeChatPartner) {
+        const isOnline = onlineUserIds.has(Number(activeChatPartner.id));
+        document.getElementById('chat-partner-online-dot').classList.toggle('hidden', !isOnline);
+        if (!document.getElementById('chat-typing-status').textContent.includes('écrire')) {
+          document.getElementById('chat-typing-status').textContent = isOnline ? 'En ligne maintenant' : '';
+        }
+      }
+    }
+
+    function showUnreadBadge(count) {
+      const badge = document.getElementById('unread-badge');
+      badge.textContent = count || '!';
+      badge.classList.remove('hidden');
+    }
+
+    function showIncomingLikeToast(fromUser, direction, icebreaker, icebreakerTarget) {
+      const toast = document.getElementById('live-toast');
+      document.getElementById('toast-avatar').src = fromUser.photo_url;
+
+      if (icebreaker) {
+        document.getElementById('toast-title').textContent = `💌 Brise-glace de ${fromUser.name} !`;
+        document.getElementById('toast-body').textContent = `${icebreakerTarget ? `Sur ${icebreakerTarget} : ` : ''}« ${icebreaker} »`;
+      } else if (direction === 'superlike') {
+        document.getElementById('toast-title').textContent = `⭐ ${fromUser.name} t'a Super Liké !`;
+        document.getElementById('toast-body').textContent = `Swipe à droite pour matcher instantanément.`;
+      } else {
+        document.getElementById('toast-title').textContent = `💖 Quelqu'un t'a liké !`;
+        document.getElementById('toast-body').textContent = `${fromUser.name}, ${fromUser.age} ans veut faire connaissance.`;
+      }
+
+      document.getElementById('toast-action-btn').onclick = () => {
+        hideToast();
+        focusProfileInDeck(fromUser, direction, icebreaker, icebreakerTarget);
+      };
+
+      toast.classList.remove('hidden');
+      lucide.createIcons();
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(hideToast, 7000);
+    }
+
+    function hideToast() {
+      document.getElementById('live-toast').classList.add('hidden');
+    }
+
+    function focusProfileInDeck(userObj, direction, icebreaker, icebreakerTarget) {
+      switchTab('discover');
+      currentPhotoIdx = 0;
+      const enriched = {
+        ...userObj,
+        incoming_direction: direction || 'like',
+        incoming_icebreaker: icebreaker || '',
+        incoming_icebreaker_target: icebreakerTarget || ''
+      };
+      profiles = [enriched, ...profiles.filter((p) => Number(p.id) !== Number(userObj.id))];
+      renderDeck();
     }
 
     // ==================== NAVIGATION ====================
@@ -550,6 +832,7 @@
       });
       if (tab === 'matches') {
         document.getElementById('unread-badge').classList.add('hidden');
+        loadLikesReceived();
         loadMatches();
       }
       if (tab === 'discover') {
@@ -557,12 +840,32 @@
       }
     }
 
-    // ==================== SWIPE & DÉCOUVERTE ====================
+    // ==================== CARROUSEL MULTI-PHOTOS & SWIPE ====================
 
     async function loadProfiles() {
       const data = await api('/api/discover');
       profiles = data.profiles || [];
+      currentPhotoIdx = 0;
+      profiles.forEach((p) => {
+        if (p.online) onlineUserIds.add(Number(p.id));
+      });
       renderDeck();
+    }
+
+    function stepCardPhoto(delta) {
+      if (profiles.length === 0) return;
+      const top = profiles[0];
+      const photos = Array.isArray(top.photos) && top.photos.length ? top.photos : [top.photo_url];
+      if (photos.length <= 1) return;
+      currentPhotoIdx = (currentPhotoIdx + delta + photos.length) % photos.length;
+      const imgEl = document.getElementById('top-card-img');
+      if (imgEl) imgEl.src = photos[currentPhotoIdx];
+      photos.forEach((_, i) => {
+        const bar = document.getElementById(`photo-bar-${i}`);
+        if (bar) {
+          bar.className = `h-1 flex-1 rounded-full transition ${i === currentPhotoIdx ? 'bg-white shadow' : 'bg-white/35'}`;
+        }
+      });
     }
 
     function renderDeck() {
@@ -576,7 +879,7 @@
               <i data-lucide="sparkles" class="w-8 h-8"></i>
             </div>
             <h3 class="font-bold text-gray-900 text-lg">Plus de nouveaux profils</h3>
-            <p class="text-xs text-gray-500 mt-1 mb-5">Tu as fait le tour des membres inscrits pour le moment. Reviens bientôt ou élargis tes préférences !</p>
+            <p class="text-xs text-gray-500 mt-1 mb-5">Tu as parcouru tous les profils disponibles pour le moment.</p>
             <button onclick="loadProfiles()" class="px-5 py-2.5 gradient-brand text-white text-xs font-bold rounded-full shadow">
               Actualiser
             </button>
@@ -586,39 +889,93 @@
         return;
       }
 
-      // Afficher les 2 prochaines cartes
       const visible = profiles.slice(0, 2).reverse();
       visible.forEach((p, idx) => {
         const isTop = idx === visible.length - 1;
+        const photos = Array.isArray(p.photos) && p.photos.length ? p.photos : [p.photo_url];
+        if (isTop && currentPhotoIdx >= photos.length) currentPhotoIdx = 0;
+        const activePhoto = isTop ? photos[currentPhotoIdx] : photos[0];
+
+        const isOnline = onlineUserIds.has(Number(p.id)) || Boolean(p.online);
         const tags = (p.interests || '').split(',').map(s => s.trim()).filter(Boolean);
         const card = document.createElement('div');
         card.className = `swipe-card absolute inset-0 rounded-3xl overflow-hidden shadow-xl bg-gray-900 ${isTop ? 'z-20 cursor-grab' : 'z-10 scale-[0.96] opacity-90'}`;
         if (isTop) card.id = 'top-card';
 
-        card.innerHTML = `
-          <img src="${p.photo_url}" alt="${p.name}" class="w-full h-full object-cover pointer-events-none" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent pointer-events-none"></div>
+        const storyBars = photos.length > 1 ? `
+          <div class="absolute top-2.5 inset-x-3.5 flex gap-1.5 z-40">
+            ${photos.map((_, i) => `
+              <div id="${isTop ? `photo-bar-${i}` : ''}" class="h-1 flex-1 rounded-full ${i === (isTop ? currentPhotoIdx : 0) ? 'bg-white shadow' : 'bg-white/35'}"></div>
+            `).join('')}
+          </div>
+        ` : '';
 
-          <!-- Badges LIKE / NOPE -->
-          <div id="badge-like" class="hidden absolute top-8 left-6 border-4 border-emerald-400 text-emerald-400 font-extrabold text-3xl px-4 py-1 rounded-xl -rotate-12 tracking-widest">
+        card.innerHTML = `
+          <img id="${isTop ? 'top-card-img' : ''}" src="${activePhoto}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover pointer-events-none" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/25 pointer-events-none"></div>
+
+          ${storyBars}
+
+          <!-- Barre supérieure : Pastille En ligne + Bouton Complimenter -->
+          <div class="absolute ${photos.length > 1 ? 'top-6' : 'top-3.5'} inset-x-3.5 flex items-center justify-between z-30">
+            ${isOnline ? `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/55 backdrop-blur-md text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                En ligne
+              </span>
+            ` : `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-gray-300 text-[11px] font-medium">
+                <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                Actif récemment
+              </span>
+            `}
+
+            <button type="button" onclick="event.stopPropagation(); openIcebreakerModal('sa photo')"
+              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-gray-900 text-xs font-bold shadow-md transition">
+              <span>📸 Complimenter</span>
+            </button>
+          </div>
+
+          ${p.incoming_direction ? `
+            <div class="absolute top-16 inset-x-3.5 z-30 bg-gradient-to-r from-rose-500/95 to-amber-500/95 backdrop-blur-md text-white px-3.5 py-2 rounded-2xl shadow-lg">
+              <p class="text-[11px] font-extrabold uppercase tracking-wide">
+                ${p.incoming_icebreaker ? `💌 Brise-glace ${p.incoming_icebreaker_target ? `sur ${escapeHtml(p.incoming_icebreaker_target)}` : ''}` : (p.incoming_direction === 'superlike' ? '⭐ T’a envoyé un Super Like !' : '💖 T’a déjà liké !')}
+              </p>
+              ${p.incoming_icebreaker ? `<p class="text-xs font-medium mt-0.5">« ${escapeHtml(p.incoming_icebreaker)} »</p>` : ''}
+            </div>
+          ` : ''}
+
+          <div id="badge-like" class="hidden absolute top-24 left-6 border-4 border-emerald-400 text-emerald-400 font-extrabold text-3xl px-4 py-1 rounded-xl -rotate-12 tracking-widest pointer-events-none">
             J'AIME
           </div>
-          <div id="badge-pass" class="hidden absolute top-8 right-6 border-4 border-rose-500 text-rose-500 font-extrabold text-3xl px-4 py-1 rounded-xl rotate-12 tracking-widest">
+          <div id="badge-pass" class="hidden absolute top-24 right-6 border-4 border-rose-500 text-rose-500 font-extrabold text-3xl px-4 py-1 rounded-xl rotate-12 tracking-widest pointer-events-none">
             NOPE
           </div>
 
-          <div class="absolute bottom-0 inset-x-0 p-5 text-white pointer-events-none">
-            <div class="flex items-end justify-between">
+          <!-- Infos profil + réaction sur la bio -->
+          <div class="absolute bottom-0 inset-x-0 p-5 text-white z-30">
+            <div class="flex items-end justify-between pointer-events-none">
               <div>
-                <h2 class="text-2xl font-extrabold">${p.name}, <span class="font-normal">${p.age}</span></h2>
-                ${p.job ? `<p class="text-xs text-gray-200 flex items-center gap-1 mt-0.5"><i data-lucide="briefcase" class="w-3.5 h-3.5"></i> ${p.job}</p>` : ''}
-                ${p.city ? `<p class="text-xs text-gray-300 flex items-center gap-1 mt-0.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> ${p.city}</p>` : ''}
+                <h2 class="text-2xl font-extrabold flex items-center gap-2">
+                  ${escapeHtml(p.name)}, <span class="font-normal">${p.age}</span>
+                </h2>
+                ${p.job ? `<p class="text-xs text-gray-200 flex items-center gap-1 mt-0.5"><i data-lucide="briefcase" class="w-3.5 h-3.5"></i> ${escapeHtml(p.job)}</p>` : ''}
+                ${p.city ? `<p class="text-xs text-gray-300 flex items-center gap-1 mt-0.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> ${escapeHtml(p.city)}</p>` : ''}
               </div>
+              ${photos.length > 1 ? `<span class="text-[11px] bg-black/45 px-2.5 py-1 rounded-full text-gray-200 font-semibold">Tapoter pour photos</span>` : ''}
             </div>
-            ${p.bio ? `<p class="text-xs text-gray-200 mt-2.5 line-clamp-2">${p.bio}</p>` : ''}
+
+            ${p.bio ? `
+              <div onclick="event.stopPropagation(); openIcebreakerModal('sa bio')"
+                class="mt-2.5 p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 cursor-pointer transition flex items-start justify-between gap-2">
+                <p class="text-xs text-gray-100 line-clamp-2 flex-1">${escapeHtml(p.bio)}</p>
+                <span class="text-[10px] font-bold bg-amber-400 text-gray-900 px-2 py-0.5 rounded-full shrink-0">Réagir</span>
+              </div>
+            ` : ''}
+
             ${tags.length ? `
-              <div class="flex flex-wrap gap-1.5 mt-3">
-                ${tags.slice(0, 4).map(t => `<span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-semibold">${t}</span>`).join('')}
+              <div class="flex flex-wrap gap-1.5 mt-2.5 pointer-events-none">
+                ${tags.slice(0, 4).map(t => `<span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-semibold">${escapeHtml(t)}</span>`).join('')}
               </div>
             ` : ''}
           </div>
@@ -631,17 +988,20 @@
     }
 
     function attachDragHandlers(card) {
-      let startX = 0, currentX = 0, isDragging = false;
+      let startX = 0, currentX = 0, isDragging = false, moved = false;
 
       const onStart = (clientX) => {
         isDragging = true;
+        moved = false;
         startX = clientX;
+        currentX = 0;
         card.classList.add('dragging');
       };
 
       const onMove = (clientX) => {
         if (!isDragging) return;
         currentX = clientX - startX;
+        if (Math.abs(currentX) > 8) moved = true;
         const rotate = currentX * 0.05;
         card.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
 
@@ -659,10 +1019,21 @@
         }
       };
 
-      const onEnd = () => {
+      const onEnd = (endClientX) => {
         if (!isDragging) return;
         isDragging = false;
         card.classList.remove('dragging');
+
+        // Tap court sans glissement -> naviguer entre les photos du profil !
+        if (!moved && typeof endClientX === 'number') {
+          const rect = card.getBoundingClientRect();
+          const relX = endClientX - rect.left;
+          if (relX < rect.width * 0.42) stepCardPhoto(-1);
+          else stepCardPhoto(1);
+          card.style.transform = '';
+          return;
+        }
+
         if (currentX > 100) {
           triggerSwipe('like');
         } else if (currentX < -100) {
@@ -677,14 +1048,17 @@
 
       card.addEventListener('mousedown', (e) => onStart(e.clientX));
       window.addEventListener('mousemove', (e) => onMove(e.clientX));
-      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('mouseup', (e) => onEnd(e.clientX));
 
       card.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), { passive: true });
       card.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX), { passive: true });
-      card.addEventListener('touchend', onEnd);
+      card.addEventListener('touchend', (e) => {
+        const touch = e.changedTouches && e.changedTouches[0];
+        onEnd(touch ? touch.clientX : undefined);
+      });
     }
 
-    async function triggerSwipe(direction) {
+    async function triggerSwipe(direction, icebreaker = '', icebreakerTarget = '') {
       if (profiles.length === 0) return;
       const target = profiles[0];
       const topCard = document.getElementById('top-card');
@@ -697,13 +1071,20 @@
       }
 
       profiles.shift();
+      currentPhotoIdx = 0;
       setTimeout(renderDeck, 220);
 
       try {
         const res = await api('/api/swipe', {
           method: 'POST',
-          body: JSON.stringify({ targetId: target.id, direction })
+          body: JSON.stringify({
+            targetId: target.id,
+            direction,
+            icebreaker,
+            icebreakerTarget
+          })
         });
+        loadLikesReceived();
         if (res.matched) {
           openMatchModal(res.matchId, res.partner);
           loadMatches();
@@ -713,7 +1094,90 @@
       }
     }
 
-    // ==================== MODALE MATCH ====================
+    // ==================== MODALE BRISE-GLACE ====================
+
+    function openIcebreakerModal(targetArea = 'sa photo') {
+      if (profiles.length === 0) return;
+      const partner = profiles[0];
+      const photos = Array.isArray(partner.photos) && partner.photos.length ? partner.photos : [partner.photo_url];
+      document.getElementById('ice-partner-img').src = photos[currentPhotoIdx] || partner.photo_url;
+      document.getElementById('ice-title').textContent = `Brise-glace pour ${partner.name}`;
+      document.getElementById('ice-input').value = '';
+      setIcebreakerTarget(targetArea);
+      document.getElementById('icebreaker-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeIcebreakerModal() {
+      document.getElementById('icebreaker-modal').classList.add('hidden');
+    }
+
+    function setIcebreakerTarget(area) {
+      currentIceTarget = area;
+      const isPhoto = area === 'sa photo';
+      document.getElementById('ice-target-photo').className = isPhoto
+        ? 'py-1.5 text-xs font-bold rounded-lg bg-white text-gray-900 shadow-sm'
+        : 'py-1.5 text-xs font-bold rounded-lg text-gray-500';
+      document.getElementById('ice-target-bio').className = !isPhoto
+        ? 'py-1.5 text-xs font-bold rounded-lg bg-white text-gray-900 shadow-sm'
+        : 'py-1.5 text-xs font-bold rounded-lg text-gray-500';
+    }
+
+    function pickIceSuggestion(text) {
+      document.getElementById('ice-input').value = text;
+    }
+
+    async function submitIcebreaker(e) {
+      e.preventDefault();
+      const text = document.getElementById('ice-input').value.trim();
+      if (!text) return;
+      closeIcebreakerModal();
+      await triggerSwipe('like', text, currentIceTarget);
+    }
+
+    // ==================== LIKES REÇUS & MATCHS ====================
+
+    async function loadLikesReceived() {
+      try {
+        const data = await api('/api/likes-received');
+        likesReceived = data.likes || [];
+        likesReceived.forEach((l) => {
+          if (l.online) onlineUserIds.add(Number(l.id));
+        });
+        document.getElementById('likes-count-pill').textContent = likesReceived.length;
+        if (likesReceived.length > 0) {
+          showUnreadBadge(likesReceived.length);
+        }
+        renderLikesReceived();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderLikesReceived() {
+      const container = document.getElementById('likes-received-list');
+      if (!likesReceived || likesReceived.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400 py-2">Aucun nouveau like en attente pour le moment.</p>`;
+        return;
+      }
+
+      container.innerHTML = likesReceived.map((l) => {
+        const isOnline = onlineUserIds.has(Number(l.id)) || Boolean(l.online);
+        return `
+          <button onclick='focusProfileInDeck(${JSON.stringify(l)}, ${JSON.stringify(l.direction)}, ${JSON.stringify(l.icebreaker || '')}, ${JSON.stringify(l.icebreaker_target || '')})'
+            class="shrink-0 w-28 p-2.5 rounded-2xl bg-gradient-to-b from-amber-50 to-rose-50 border border-amber-200/80 text-center hover:scale-[1.03] transition">
+            <div class="relative w-14 h-14 mx-auto mb-1.5">
+              <img src="${l.photo_url}" class="w-14 h-14 rounded-full object-cover border-2 border-rose-500" />
+              ${isOnline ? `<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>` : ''}
+            </div>
+            <p class="text-xs font-extrabold text-gray-900 truncate">${escapeHtml(l.name)}, ${l.age}</p>
+            <p class="text-[10px] font-semibold text-rose-600 truncate mt-0.5">
+              ${l.icebreaker ? `💌 « ${escapeHtml(l.icebreaker)} »` : (l.direction === 'superlike' ? '⭐ Super Like' : '💖 T’a liké')}
+            </p>
+          </button>
+        `;
+      }).join('');
+    }
 
     function openMatchModal(matchId, partner) {
       document.getElementById('match-modal-text').textContent = `Toi et ${partner.name} vous êtes mutuellement likés !`;
@@ -731,39 +1195,61 @@
       document.getElementById('match-modal').classList.add('hidden');
     }
 
-    // ==================== MATCHS & CHAT ====================
-
     async function loadMatches() {
       const data = await api('/api/matches');
       const list = document.getElementById('matches-list');
       const matches = data.matches || [];
 
       if (matches.length === 0) {
-        list.innerHTML = `<p class="text-xs text-gray-400 text-center py-8">Aucun match pour l'instant. Continue à swiper !</p>`;
+        list.innerHTML = `<p class="text-xs text-gray-400 text-center py-8">Aucun match pour l'instant. Continue à swiper ou envoie un brise-glace !</p>`;
         return;
       }
 
-      list.innerHTML = matches.map(m => `
-        <button onclick='openChat(${m.match_id}, ${JSON.stringify({ name: m.name, photo_url: m.photo_url })})'
-          class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition text-left border border-gray-100">
-          <img src="${m.photo_url}" class="w-12 h-12 rounded-full object-cover shrink-0" />
-          <div class="flex-1 min-w-0">
-            <h4 class="font-bold text-sm text-gray-900">${m.name}, ${m.age}</h4>
-            <p class="text-xs text-gray-500 truncate">${m.last_message || 'Nouveau match ! Dis bonjour 👋'}</p>
-          </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-        </button>
-      `).join('');
+      list.innerHTML = matches.map((m) => {
+        const isOnline = onlineUserIds.has(Number(m.partner_id)) || Boolean(m.online);
+        const partnerData = {
+          id: m.partner_id,
+          name: m.name,
+          age: m.age,
+          city: m.city,
+          job: m.job,
+          bio: m.bio,
+          interests: m.interests,
+          photo_url: m.photo_url,
+          photos: m.photos || [m.photo_url]
+        };
+        return `
+          <button onclick='openChat(${m.match_id}, ${JSON.stringify(partnerData)})'
+            class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition text-left border border-gray-100">
+            <div class="relative shrink-0">
+              <img src="${m.photo_url}" class="w-12 h-12 rounded-full object-cover" />
+              ${isOnline ? `<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>` : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-sm text-gray-900">${escapeHtml(m.name)}, ${m.age}</h4>
+                ${isOnline ? `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">En ligne</span>` : ''}
+              </div>
+              <p class="text-xs text-gray-500 truncate">${m.last_message ? escapeHtml(m.last_message) : 'Nouveau match ! Dis bonjour 👋'}</p>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+          </button>
+        `;
+      }).join('');
       lucide.createIcons();
     }
 
     async function openChat(matchId, partner) {
       activeMatchId = matchId;
+      activeChatPartner = partner;
+      const isOnline = onlineUserIds.has(Number(partner.id));
+
       document.getElementById('matches-list-panel').classList.add('hidden');
       document.getElementById('chat-panel').classList.remove('hidden');
       document.getElementById('chat-partner-name').textContent = partner.name;
       document.getElementById('chat-partner-avatar').src = partner.photo_url;
-      document.getElementById('chat-typing-status').textContent = '';
+      document.getElementById('chat-partner-online-dot').classList.toggle('hidden', !isOnline);
+      document.getElementById('chat-typing-status').textContent = isOnline ? 'En ligne maintenant' : '';
 
       if (socket) socket.emit('join_match', matchId);
 
@@ -774,8 +1260,27 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    function openPartnerAlbumModal() {
+      if (!activeChatPartner) return;
+      const p = activeChatPartner;
+      const photos = Array.isArray(p.photos) && p.photos.length ? p.photos : [p.photo_url];
+      document.getElementById('album-title').textContent = `${p.name}${p.age ? `, ${p.age} ans` : ''}`;
+      document.getElementById('album-photos').innerHTML = photos.map(src => `
+        <img src="${src}" class="w-full aspect-[3/4] object-cover rounded-2xl" />
+      `).join('');
+      document.getElementById('album-meta').textContent = [p.job, p.city].filter(Boolean).join(' • ');
+      document.getElementById('album-bio').textContent = p.bio || '';
+      document.getElementById('album-bio').classList.toggle('hidden', !p.bio);
+      document.getElementById('album-modal').classList.remove('hidden');
+    }
+
+    function closePartnerAlbumModal() {
+      document.getElementById('album-modal').classList.add('hidden');
+    }
+
     function closeChat() {
       activeMatchId = null;
+      activeChatPartner = null;
       document.getElementById('chat-panel').classList.add('hidden');
       document.getElementById('matches-list-panel').classList.remove('hidden');
       loadMatches();
@@ -783,7 +1288,7 @@
 
     function appendMessageBubble(msg) {
       const box = document.getElementById('chat-messages');
-      const isMe = msg.sender_id === currentUser.id;
+      const isMe = Number(msg.sender_id) === Number(currentUser.id);
       const div = document.createElement('div');
       div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
       div.innerHTML = `
@@ -827,26 +1332,29 @@
 
     async function handleUpdateProfile(e) {
       e.preventDefault();
-      const fd = new FormData();
-      fd.append('name', document.getElementById('prof-name').value);
-      fd.append('age', document.getElementById('prof-age').value);
-      fd.append('gender', document.getElementById('prof-gender').value);
-      fd.append('interested_in', document.getElementById('prof-interested').value);
-      fd.append('city', document.getElementById('prof-city').value);
-      fd.append('job', document.getElementById('prof-job').value);
-      fd.append('bio', document.getElementById('prof-bio').value);
-      fd.append('interests', document.getElementById('prof-interests').value);
-      const file = document.getElementById('prof-photo').files[0];
-      if (file) fd.append('photo', file);
+      const payload = {
+        name: document.getElementById('prof-name').value,
+        age: document.getElementById('prof-age').value,
+        gender: document.getElementById('prof-gender').value,
+        interested_in: document.getElementById('prof-interested').value,
+        city: document.getElementById('prof-city').value,
+        job: document.getElementById('prof-job').value,
+        bio: document.getElementById('prof-bio').value,
+        interests: document.getElementById('prof-interests').value,
+        photos_data: profPhotosList
+      };
 
-      const data = await api('/api/me', { method: 'PUT', body: fd });
+      const data = await api('/api/me', {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
       currentUser = data.user;
       syncUserUI();
-      alert('Profil mis à jour !');
+      alert('Profil et photos mis à jour !');
     }
 
     function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, (m) => ({
+      return String(str || '').replace(/[&<>"']/g, (m) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[m]));
     }

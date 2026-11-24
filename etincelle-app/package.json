@@ -1,7 +1,7 @@
 {
   "name": "etincelle-dating-app",
-  "version": "1.0.0",
-  "description": "Application de rencontre full-stack avec authentification, swipe, matchs mutuels et messagerie temps réel.",
+  "version": "3.0.0",
+  "description": "Application de rencontre full-stack temps réel avec galeries multi-photos, profils interactifs et chat intelligent.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +11,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7"
   },
