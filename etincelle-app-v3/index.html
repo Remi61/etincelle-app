@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Étincelle — Rencontres Authentiques</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; }
+    /* Natural smartphone/DSLR photography treatment — avoids glossy AI contrast */
+    .real-photo {
+      filter: contrast(0.98) saturate(0.96) brightness(1.01);
+      transition: transform 0.35s ease, opacity 0.25s ease;
+    }
+    .card-shadow {
+      box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.16), 0 4px 14px -4px rgba(15, 23, 42, 0.06);
+    }
+    .gradient-brand {
+      background: linear-gradient(135deg, #ff5864 0%, #fd297b 100%);
+    }
+    .gradient-gold {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    .gradient-vip {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .animate-pulse-soft { animation: pulseSoft 2.4s infinite ease-in-out; }
+    /* Hide Google Translate top banner if fallback widget is triggered */
+    .goog-te-banner-frame.skiptranslate { display: none !important; }
+    body { top: 0px !important; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Hidden Google Translate container for 130+ extra languages fallback -->
+  <div id="google_translate_element" class="hidden"></div>
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-rose-50 via-white to-orange-50">
+    <div class="w-full max-w-md bg-white rounded-3xl card-shadow p-7 sm:p-8 border border-slate-100">
+      <!-- Top Language / Country Auto-Detection Pill -->
+      <div class="flex items-center justify-between mb-5 bg-slate-50 border border-slate-200/80 rounded-2xl px-3.5 py-2 text-xs">
+        <div class="flex items-center gap-2 text-slate-600">
+          <span id="detected-flag" class="text-base">🌍</span>
+          <div>
+            <span id="geo-status-text" class="font-semibold text-slate-800">Détection auto...</span>
+            <span id="geo-country-badge" class="block text-[11px] text-slate-500">Traduction automatique active</span>
+          </div>
+        </div>
+        <select id="auth-lang-select" onchange="setLanguage(this.value, true)" class="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="pt">🇵🇹 Português</option>
+          <option value="nl">🇳🇱 Nederlands</option>
+          <option value="ar">🇸🇦 العربية</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="zh">🇨🇳 中文</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center shadow-lg shadow-rose-200 mb-3">
+          <svg class="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M13.5 2c-1.1 2.4-2.5 3.9-4.2 5.3C7.2 9 6 11.2 6 13.8 6 17.8 9.1 21 13 21c3.9 0 7-3.2 7-7.2 0-3.3-2-6.1-4.8-7.4.3 1.4-.1 2.7-1.1 3.5-.2-2.7-.2-5.4-.6-7.9z"/>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-rose-500">Étincelle</h1>
+        <p data-i18n="tagline" class="text-slate-500 text-sm mt-1">Crée ton profil et rencontre des personnes vraies près de chez toi.</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="grid grid-cols-2 bg-slate-100 p-1 rounded-2xl mb-5">
+        <button id="tab-login" onclick="switchAuthTab('login')" data-i18n="login_tab" class="py-2.5 text-sm font-bold rounded-xl bg-white text-slate-900 shadow-sm transition">Connexion</button>
+        <button id="tab-register" onclick="switchAuthTab('register')" data-i18n="register_tab" class="py-2.5 text-sm font-semibold rounded-xl text-slate-500 hover:text-slate-800 transition">Créer un compte</button>
+      </div>
+
+      <div id="auth-error" class="hidden mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-medium"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label data-i18n="email_label" class="block text-xs font-bold text-slate-700 mb-1.5">Email</label>
+          <input id="login-email" type="email" value="lucas@demo.fr" required class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+        </div>
+        <div>
+          <label data-i18n="password_label" class="block text-xs font-bold text-slate-700 mb-1.5">Mot de passe</label>
+          <div class="relative">
+            <input id="login-password" type="password" value="demo1234" required class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold">👁️</button>
+          </div>
+        </div>
+        <button type="submit" data-i18n="login_btn" class="w-full py-3.5 rounded-xl gradient-brand text-white font-bold text-sm shadow-lg shadow-rose-200 hover:opacity-95 transition cursor-pointer">Se connecter</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" onsubmit="handleRegister(event)" class="hidden space-y-3.5">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label data-i18n="firstname_label" class="block text-xs font-bold text-slate-700 mb-1">Prénom</label>
+            <input id="reg-name" type="text" placeholder="Ex: Sophie" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+          </div>
+          <div>
+            <label data-i18n="age_label" class="block text-xs font-bold text-slate-700 mb-1">Âge</label>
+            <input id="reg-age" type="number" min="18" max="90" value="28" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+          </div>
+        </div>
+        <div>
+          <label data-i18n="city_label" class="block text-xs font-bold text-slate-700 mb-1">Ville & Pays</label>
+          <input id="reg-city" type="text" placeholder="Ex: Caen, France" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+        </div>
+        <div>
+          <label data-i18n="email_label" class="block text-xs font-bold text-slate-700 mb-1">Email</label>
+          <input id="reg-email" type="email" placeholder="vous@exemple.com" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+        </div>
+        <div>
+          <label data-i18n="password_label" class="block text-xs font-bold text-slate-700 mb-1">Mot de passe</label>
+          <input id="reg-password" type="password" placeholder="8 caractères minimum" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+        </div>
+        <button type="submit" data-i18n="create_account_btn" class="w-full py-3.5 rounded-xl gradient-brand text-white font-bold text-sm shadow-lg shadow-rose-200 hover:opacity-95 transition cursor-pointer">Créer mon compte gratuit</button>
+      </form>
+
+      <!-- Quick Demo Accounts -->
+      <div class="mt-6 bg-slate-50 rounded-2xl p-3.5 border border-slate-100 text-xs text-slate-600">
+        <p data-i18n="demo_accounts_title" class="font-bold text-slate-700 mb-1.5">Comptes de test prêts à l'emploi (cliquez pour remplir) :</p>
+        <div class="space-y-1.5">
+          <button type="button" onclick="quickFillDemo('camille@demo.fr','demo1234')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white hover:shadow-sm transition flex items-center justify-between">
+            <span>• <code class="font-mono text-rose-600">camille@demo.fr</code> / <code>demo1234</code></span>
+            <span class="text-[11px] text-slate-400">👩 27 ans</span>
+          </button>
+          <button type="button" onclick="quickFillDemo('lucas@demo.fr','demo1234')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white hover:shadow-sm transition flex items-center justify-between">
+            <span>• <code class="font-mono text-rose-600">lucas@demo.fr</code> / <code>demo1234</code></span>
+            <span class="text-[11px] text-slate-400">👨 29 ans</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app" class="hidden min-h-screen flex flex-col">
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100">
+      <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center text-white shadow-sm">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5 2c-1.1 2.4-2.5 3.9-4.2 5.3C7.2 9 6 11.2 6 13.8 6 17.8 9.1 21 13 21c3.9 0 7-3.2 7-7.2 0-3.3-2-6.1-4.8-7.4.3 1.4-.1 2.7-1.1 3.5-.2-2.7-.2-5.4-.6-7.9z"/></svg>
+          </div>
+          <span class="font-extrabold text-xl tracking-tight text-rose-500 hidden sm:inline">Étincelle</span>
+          <!-- Auto-Language Selector in Header -->
+          <div class="flex items-center gap-1 bg-slate-100 rounded-full px-2.5 py-1 text-xs">
+            <span id="header-flag">🌍</span>
+            <select id="header-lang-select" onchange="setLanguage(this.value, true)" class="bg-transparent font-bold text-slate-700 focus:outline-none cursor-pointer">
+              <option value="fr">FR</option>
+              <option value="en">EN</option>
+              <option value="es">ES</option>
+              <option value="de">DE</option>
+              <option value="it">IT</option>
+              <option value="pt">PT</option>
+              <option value="nl">NL</option>
+              <option value="ar">AR</option>
+              <option value="ja">JA</option>
+              <option value="zh">ZH</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quotas & Subscription Badge -->
+        <div class="flex items-center gap-2">
+          <div id="quota-pill" class="flex items-center gap-2 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full text-xs font-bold text-rose-700">
+            <span title="Likes restants">❤️ <span id="likes-left-count">5</span></span>
+            <span class="text-rose-200">|</span>
+            <span title="Messages restants">💬 <span id="msgs-left-count">3</span></span>
+          </div>
+
+          <button onclick="openPremiumModal()" id="plan-badge-btn" class="px-3 py-1.5 rounded-full gradient-gold text-white text-xs font-extrabold shadow-sm hover:opacity-95 transition flex items-center gap-1 cursor-pointer">
+            <span>👑</span>
+            <span id="current-plan-label">Gratuit</span>
+          </button>
+
+          <button onclick="toggleFilterDrawer()" class="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer">
+            <span>🎛️</span>
+            <span data-i18n="filters_btn" class="hidden md:inline">Filtres</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Filters Bar -->
+      <div id="filter-drawer" class="hidden bg-slate-50 border-t border-slate-200/80">
+        <div class="max-w-5xl mx-auto px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label data-i18n="filter_gender" class="block font-bold text-slate-600 mb-1">Je recherche</label>
+            <select id="filter-gender" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold">
+              <option value="all" data-i18n="gender_all">Tout le monde (38 profils)</option>
+              <option value="female" data-i18n="gender_female">Femmes (30 profils)</option>
+              <option value="male" data-i18n="gender_male">Hommes (8 profils)</option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="filter_age" class="block font-bold text-slate-600 mb-1">Tranche d'âge : <span id="age-range-label" class="text-rose-600">18 - 70 ans</span></label>
+            <div class="flex items-center gap-2">
+              <input id="filter-age-min" type="number" min="18" max="75" value="18" onchange="applyFilters()" class="w-1/2 bg-white border border-slate-200 rounded-xl px-2.5 py-2 font-semibold" />
+              <span class="text-slate-400">→</span>
+              <input id="filter-age-max" type="number" min="18" max="80" value="70" onchange="applyFilters()" class="w-1/2 bg-white border border-slate-200 rounded-xl px-2.5 py-2 font-semibold" />
+            </div>
+          </div>
+          <div>
+            <label data-i18n="filter_region" class="block font-bold text-slate-600 mb-1">Zone géographique</label>
+            <select id="filter-region" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold">
+              <option value="all" data-i18n="region_all">Toutes localisations</option>
+              <option value="Normandie">Normandie (Caen, Rouen, Deauville...)</option>
+              <option value="France">France entière</option>
+              <option value="Europe">Europe (Belgique, Suisse, Espagne...)</option>
+              <option value="International">International (Canada, Japon, Brésil...)</option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="filter_city" class="block font-bold text-slate-600 mb-1">Ville / Mot-clé</label>
+            <div class="flex gap-1.5">
+              <input id="filter-search" type="text" oninput="applyFilters()" placeholder="Paris, Caen, Randonnée..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-medium" />
+              <button onclick="resetFilters()" class="px-2.5 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 font-bold" title="Réinitialiser">↺</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Views -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-5 pb-24">
+
+      <!-- VIEW 1: DISCOVER SWIPE DECK -->
+      <section id="view-discover" class="flex flex-col items-center">
+        <div class="w-full max-w-md flex items-center justify-between text-xs text-slate-500 mb-2.5 px-1">
+          <span><strong id="remaining-profiles-count" class="text-slate-800">38</strong> <span data-i18n="profiles_available">profils réels disponibles</span></span>
+          <span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-semibold">
+            ✓ <span data-i18n="real_photos_badge">Photos naturelles vérifiées</span>
+          </span>
+        </div>
+
+        <!-- Profile Card Container -->
+        <div id="swipe-card-container" class="w-full max-w-md"></div>
+
+        <!-- Action Buttons -->
+        <div id="swipe-controls" class="flex items-center justify-center gap-4 mt-5">
+          <button onclick="rewindProfile()" title="Retour arrière" class="w-12 h-12 rounded-full bg-white border border-slate-200 text-amber-500 shadow-md hover:scale-105 transition flex items-center justify-center text-lg cursor-pointer">↺</button>
+          <button onclick="swipeAction('pass')" title="Passer (↓)" class="w-16 h-16 rounded-full bg-white border border-slate-200 text-slate-500 shadow-lg hover:scale-105 hover:text-rose-500 transition flex items-center justify-center text-2xl font-bold cursor-pointer">✕</button>
+          <button onclick="swipeAction('superlike')" title="Super Étincelle" class="w-13 h-13 p-3.5 rounded-full bg-white border border-sky-200 text-sky-500 shadow-md hover:scale-105 transition flex items-center justify-center text-xl cursor-pointer">★</button>
+          <button onclick="swipeAction('like')" title="J'aime (↑)" class="w-16 h-16 rounded-full gradient-brand text-white shadow-xl shadow-rose-200 hover:scale-105 transition flex items-center justify-center text-2xl cursor-pointer">♥</button>
+        </div>
+      </section>
+
+      <!-- VIEW 2: LIKES YOU (BLURRED FOR FREE, UNLOCKED FOR GOLD/VIP) -->
+      <section id="view-likes" class="hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 data-i18n="likes_you_title" class="text-xl font-extrabold text-slate-900">Personnes qui vous ont liké</h2>
+            <p data-i18n="likes_you_sub" class="text-xs text-slate-500">Découvrez qui s'intéresse déjà à votre profil</p>
+          </div>
+          <button onclick="openPremiumModal()" data-i18n="unlock_likes_btn" class="px-4 py-2.5 rounded-xl gradient-gold text-white text-xs font-extrabold shadow-md hover:opacity-95 transition cursor-pointer">
+            👑 Débloquer tous les likes
+          </button>
+        </div>
+        <div id="admirers-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- VIEW 3: MATCHES & MESSAGES -->
+      <section id="view-matches" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden min-h-[520px]">
+          <!-- Matches Sidebar -->
+          <div class="border-r border-slate-100 p-4 flex flex-col">
+            <h3 data-i18n="your_matches" class="font-extrabold text-sm text-slate-800 mb-3">Vos Matchs & Discussions</h3>
+            <div id="matches-list" class="space-y-2 overflow-y-auto flex-1"></div>
+          </div>
+          <!-- Chat Window -->
+          <div class="md:col-span-2 flex flex-col bg-slate-50/50">
+            <div id="chat-header" class="p-4 bg-white border-b border-slate-100 flex items-center justify-between">
+              <span data-i18n="select_match_prompt" class="text-xs text-slate-400 font-medium">Sélectionnez un match pour discuter</span>
+            </div>
+            <div id="chat-messages" class="flex-1 p-4 space-y-3 overflow-y-auto max-h-[360px]"></div>
+            <form id="chat-form" onsubmit="sendMessage(event)" class="p-3 bg-white border-t border-slate-100 flex gap-2">
+              <input id="chat-input" type="text" placeholder="Écrivez un message naturel..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" />
+              <button type="submit" data-i18n="send_btn" class="px-5 py-2.5 rounded-xl gradient-brand text-white text-xs font-bold shadow-sm hover:opacity-95 transition cursor-pointer">Envoyer</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: PROFILE, REAL PHOTO MANAGER & SUBSCRIPTIONS -->
+      <section id="view-profile" class="hidden max-w-2xl mx-auto space-y-5">
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-5">
+          <img id="user-avatar-img" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80" alt="Profil" class="w-24 h-24 rounded-2xl object-cover real-photo border-2 border-rose-200" />
+          <div class="flex-1 text-center sm:text-left">
+            <div class="flex items-center justify-center sm:justify-start gap-2">
+              <h2 id="profile-user-name" class="text-xl font-extrabold text-slate-900">Lucas, 29</h2>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">✓ Vérifié</span>
+            </div>
+            <p id="profile-user-city" class="text-xs text-slate-500 mt-0.5">Caen, Normandie • France</p>
+            <div class="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
+              <button onclick="openPremiumModal()" class="px-4 py-2 rounded-xl gradient-gold text-white text-xs font-extrabold shadow-sm cursor-pointer">👑 Gérer mon abonnement</button>
+              <button onclick="logout()" data-i18n="logout_btn" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 cursor-pointer">Déconnexion</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real Photo Uploader / Admin Tool -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-extrabold text-sm text-slate-900">📸 Gestionnaire de Vraies Photos (Mode Propriétaire)</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Importez vos propres photographies réelles depuis votre ordinateur ou téléphone pour remplacer n'importe quelle photo de profil.</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Profil à modifier</label>
+              <select id="admin-profile-select" class="w-full border border-slate-200 rounded-xl px-3 py-2 font-semibold bg-slate-50"></select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Emplacement photo</label>
+              <select id="admin-photo-slot" class="w-full border border-slate-200 rounded-xl px-3 py-2 font-semibold bg-slate-50">
+                <option value="0">Photo 1 (Principale)</option>
+                <option value="1">Photo 2 (Portrait 2)</option>
+                <option value="2">Photo 3 (Quotidien)</option>
+                <option value="3">Photo 4 (Voyage / Loisir)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Fichier image réel</label>
+              <label class="w-full flex items-center justify-center px-3 py-2 rounded-xl gradient-brand text-white font-bold cursor-pointer hover:opacity-95">
+                <span>Choisir une photo...</span>
+                <input type="file" accept="image/*" onchange="handleLocalPhotoUpload(event)" class="hidden" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creator / Testing Simulator Controls -->
+        <div class="bg-slate-900 text-white rounded-3xl p-6 space-y-3">
+          <h3 class="font-extrabold text-sm flex items-center gap-2">🛠️ Outils Créateur & Simulation Paywall</h3>
+          <p class="text-xs text-slate-300">Testez instantanément les limites gratuites (5 likes / 3 messages) ou les formules payantes (Plus, Gold, VIP).</p>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="resetFreeQuotas()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold cursor-pointer">🔄 Recharger quotas gratuits (5❤️ / 3💬)</button>
+            <button onclick="exhaustQuotasDemo()" class="px-3.5 py-2 rounded-xl bg-rose-500/80 hover:bg-rose-500 text-xs font-bold cursor-pointer">🚫 Simuler quota épuisé (Paywall)</button>
+            <button onclick="setPlan('free')" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold cursor-pointer">Revenir au plan Gratuit</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200/80 z-30">
+      <div class="max-w-md mx-auto grid grid-cols-4 h-16">
+        <button onclick="switchView('discover')" id="nav-discover" class="flex flex-col items-center justify-center text-rose-500 font-bold text-xs gap-0.5 cursor-pointer">
+          <span class="text-lg">🔥</span>
+          <span data-i18n="nav_discover">Découvrir</span>
+        </button>
+        <button onclick="switchView('likes')" id="nav-likes" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-700 font-semibold text-xs gap-0.5 relative cursor-pointer">
+          <span class="text-lg">💛</span>
+          <span data-i18n="nav_likes">Likes (6)</span>
+        </button>
+        <button onclick="switchView('matches')" id="nav-matches" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-700 font-semibold text-xs gap-0.5 relative cursor-pointer">
+          <span class="text-lg">💬</span>
+          <span data-i18n="nav_messages">Messages</span>
+        </button>
+        <button onclick="switchView('profile')" id="nav-profile" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-700 font-semibold text-xs gap-0.5 cursor-pointer">
+          <span class="text-lg">👤</span>
+          <span data-i18n="nav_profile">Profil</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- FULLSCREEN PROFILE & PHOTO GALLERY MODAL -->
+  <div id="profile-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-white w-full max-w-xl max-h-[92vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+      <div class="relative bg-slate-900 h-80 sm:h-96 flex items-center justify-center">
+        <img id="modal-main-photo" src="" alt="" class="w-full h-full object-cover real-photo" />
+        <button onclick="closeProfileModal()" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/60 text-white font-bold flex items-center justify-center hover:bg-black cursor-pointer">✕</button>
+        <button onclick="modalPrevPhoto()" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 text-white font-bold flex items-center justify-center hover:bg-black cursor-pointer">‹</button>
+        <button onclick="modalNextPhoto()" class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 text-white font-bold flex items-center justify-center hover:bg-black cursor-pointer">›</button>
+        <div id="modal-photo-caption" class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full"></div>
+      </div>
+      <!-- Thumbnails strip -->
+      <div id="modal-thumbnails" class="grid grid-cols-4 gap-2 p-3 bg-slate-100 border-b border-slate-200"></div>
+      <!-- Bio & Details -->
+      <div id="modal-body" class="p-5 overflow-y-auto space-y-3 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION / PAYWALL MODAL -->
+  <div id="premium-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-white w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl my-auto">
+      <div class="gradient-vip text-white p-6 flex items-start justify-between">
+        <div>
+          <span class="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-extrabold">ÉTINCELLE PREMIUM</span>
+          <h2 id="paywall-title" class="text-2xl font-extrabold mt-2">Passez à la vitesse supérieure</h2>
+          <p id="paywall-subtitle" class="text-slate-300 text-xs mt-1">Likes illimités, messages directs sans attendre et accès complet aux personnes qui vous likent.</p>
+        </div>
+        <button onclick="closePremiumModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center cursor-pointer">✕</button>
+      </div>
+
+      <!-- Billing Cycle Selector -->
+      <div class="p-6 space-y-5">
+        <div class="flex justify-center">
+          <div class="inline-flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
+            <button onclick="setBillingCycle('monthly')" id="cycle-monthly" class="px-4 py-2 rounded-xl bg-white shadow-sm text-slate-900 cursor-pointer">Mensuel</button>
+            <button onclick="setBillingCycle('quarterly')" id="cycle-quarterly" class="px-4 py-2 rounded-xl text-slate-500 cursor-pointer">3 mois (-30%)</button>
+            <button onclick="setBillingCycle('yearly')" id="cycle-yearly" class="px-4 py-2 rounded-xl text-slate-500 cursor-pointer">12 mois (-50%)</button>
+          </div>
+        </div>
+
+        <!-- 3 Tiers -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- PLUS -->
+          <div class="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between hover:border-rose-300 transition">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-rose-500 text-base">Étincelle Plus</span>
+                <span class="text-xs bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full font-bold">Populaire</span>
+              </div>
+              <div class="mt-3">
+                <span id="price-plus" class="text-2xl font-extrabold text-slate-900">9,99 €</span>
+                <span class="text-xs text-slate-400">/ mois</span>
+              </div>
+              <ul class="mt-4 space-y-2 text-xs text-slate-600">
+                <li>✓ <strong>Likes illimités</strong> chaque jour</li>
+                <li>✓ <strong>20 messages</strong> par jour</li>
+                <li>✓ Retours arrière illimités</li>
+                <li>✓ Sans publicité</li>
+              </ul>
+            </div>
+            <button onclick="subscribeToPlan('plus')" class="mt-5 w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs transition cursor-pointer">Choisir Plus</button>
+          </div>
+
+          <!-- GOLD -->
+          <div class="border-2 border-amber-400 rounded-2xl p-5 flex flex-col justify-between bg-amber-50/30 relative">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full gradient-gold text-white text-[10px] font-extrabold tracking-wide">LE PLUS CHOISI</span>
+            <div>
+              <span class="font-extrabold text-amber-600 text-base">Étincelle Gold</span>
+              <div class="mt-3">
+                <span id="price-gold" class="text-2xl font-extrabold text-slate-900">19,99 €</span>
+                <span class="text-xs text-slate-400">/ mois</span>
+              </div>
+              <ul class="mt-4 space-y-2 text-xs text-slate-700">
+                <li>✓ Tout le pack <strong>Étincelle Plus</strong></li>
+                <li>✓ <strong>Messages illimités</strong></li>
+                <li>✓ <strong>Voir qui vous a liké</strong> (6 profils)</li>
+                <li>✓ 5 Super Étincelles / semaine</li>
+              </ul>
+            </div>
+            <button onclick="subscribeToPlan('gold')" class="mt-5 w-full py-2.5 rounded-xl gradient-gold text-white font-extrabold text-xs shadow-md hover:opacity-95 transition cursor-pointer">Choisir Gold</button>
+          </div>
+
+          <!-- VIP -->
+          <div class="border border-slate-800 rounded-2xl p-5 flex flex-col justify-between bg-slate-900 text-white">
+            <div>
+              <span class="font-extrabold text-amber-300 text-base">Étincelle VIP</span>
+              <div class="mt-3">
+                <span id="price-vip" class="text-2xl font-extrabold text-white">29,99 €</span>
+                <span class="text-xs text-slate-400">/ mois</span>
+              </div>
+              <ul class="mt-4 space-y-2 text-xs text-slate-300">
+                <li>✓ Tout le pack <strong>Étincelle Gold</strong></li>
+                <li>✓ Profil mis en avant en priorité</li>
+                <li>✓ Message avant même un match</li>
+                <li>✓ Mode Passeport mondial</li>
+              </ul>
+            </div>
+            <button onclick="subscribeToPlan('vip')" class="mt-5 w-full py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs transition cursor-pointer">Choisir VIP</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATCH CELEBRATION TOAST / MODAL -->
+  <div id="match-modal" class="hidden fixed inset-0 z-50 bg-rose-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-7 text-center shadow-2xl space-y-4">
+      <div class="text-4xl animate-pulse-soft">✨❤️✨</div>
+      <h2 class="text-2xl font-extrabold text-rose-500">C'est une Étincelle !</h2>
+      <p id="match-modal-text" class="text-xs text-slate-600">Vous vous plaisez mutuellement.</p>
+      <div class="flex justify-center items-center gap-3 py-2">
+        <img id="match-user-img" src="" class="w-20 h-20 rounded-full object-cover border-4 border-rose-200 real-photo" />
+        <img id="match-target-img" src="" class="w-20 h-20 rounded-full object-cover border-4 border-rose-500 real-photo" />
+      </div>
+      <button onclick="goToMatchChat()" class="w-full py-3 rounded-xl gradient-brand text-white font-bold text-xs shadow-lg cursor-pointer">Envoyer un premier message</button>
+      <button onclick="closeMatchModal()" class="w-full py-2 text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer">Continuer à découvrir</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. MULTI-LANGUAGE AUTO-TRANSLATION ENGINE (COUNTRY + BROWSER + IP DETECT)
+    // =========================================================================
+    const TRANSLATIONS = {
+      fr: {
+        flag: "🇫🇷", name: "Français",
+        tagline: "Crée ton profil et rencontre des personnes vraies près de chez toi.",
+        login_tab: "Connexion", register_tab: "Créer un compte",
+        email_label: "Email", password_label: "Mot de passe", login_btn: "Se connecter",
+        firstname_label: "Prénom", age_label: "Âge", city_label: "Ville & Pays",
+        create_account_btn: "Créer mon compte gratuit",
+        demo_accounts_title: "Comptes de test prêts à l'emploi (cliquez pour remplir) :",
+        filters_btn: "Filtres",
+        filter_gender: "Je recherche", gender_all: "Tout le monde (38 profils)", gender_female: "Femmes (30 profils)", gender_male: "Hommes (8 profils)",
+        filter_age: "Tranche d'âge", filter_region: "Zone géographique", region_all: "Toutes localisations", filter_city: "Ville / Mot-clé",
+        profiles_available: "profils réels disponibles", real_photos_badge: "Photos naturelles vérifiées",
+        likes_you_title: "Personnes qui vous ont liké", likes_you_sub: "Découvrez qui s'intéresse déjà à votre profil",
+        unlock_likes_btn: "👑 Débloquer tous les likes",
+        your_matches: "Vos Matchs & Discussions", select_match_prompt: "Sélectionnez un match pour discuter", send_btn: "Envoyer",
+        logout_btn: "Déconnexion", nav_discover: "Découvrir", nav_likes: "Likes (6)", nav_messages: "Messages", nav_profile: "Profil",
+        view_full_profile: "Voir les 4 photos & bio", verified_natural: "Photo réelle vérifiée"
+      },
+      en: {
+        flag: "🇬🇧", name: "English",
+        tagline: "Create your profile and meet real people near you.",
+        login_tab: "Log In", register_tab: "Sign Up",
+        email_label: "Email", password_label: "Password", login_btn: "Log In",
+        firstname_label: "First Name", age_label: "Age", city_label: "City & Country",
+        create_account_btn: "Create Free Account",
+        demo_accounts_title: "Ready-to-use demo accounts (click to fill):",
+        filters_btn: "Filters",
+        filter_gender: "Looking for", gender_all: "Everyone (38 profiles)", gender_female: "Women (30 profiles)", gender_male: "Men (8 profiles)",
+        filter_age: "Age range", filter_region: "Region", region_all: "All locations", filter_city: "City / Keyword",
+        profiles_available: "real profiles available", real_photos_badge: "Verified natural photos",
+        likes_you_title: "People who liked you", likes_you_sub: "See who is already interested in your profile",
+        unlock_likes_btn: "👑 Unlock all likes",
+        your_matches: "Your Matches & Chats", select_match_prompt: "Select a match to start chatting", send_btn: "Send",
+        logout_btn: "Log Out", nav_discover: "Discover", nav_likes: "Likes (6)", nav_messages: "Messages", nav_profile: "Profile",
+        view_full_profile: "View all 4 photos & bio", verified_natural: "Verified real photo"
+      },
+      es: {
+        flag: "🇪🇸", name: "Español",
+        tagline: "Crea tu perfil y conoce personas reales cerca de ti.",
+        login_tab: "Iniciar sesión", register_tab: "Crear cuenta",
+        email_label: "Correo electrónico", password_label: "Contraseña", login_btn: "Entrar",
+        firstname_label: "Nombre", age_label: "Edad", city_label: "Ciudad y País",
+        create_account_btn: "Crear cuenta gratis",
+        demo_accounts_title: "Cuentas de prueba listas (haz clic para rellenar):",
+        filters_btn: "Filtros",
+        filter_gender: "Busco", gender_all: "Todos (38 perfiles)", gender_female: "Mujeres (30 perfiles)", gender_male: "Hombres (8 perfiles)",
+        filter_age: "Rango de edad", filter_region: "Ubicación", region_all: "Todas las ubicaciones", filter_city: "Ciudad / Palabra clave",
+        profiles_available: "perfiles reales disponibles", real_photos_badge: "Fotos naturales verificadas",
+        likes_you_title: "Personas a las que les gustas", likes_you_sub: "Descubre quién ya se interesa por tu perfil",
+        unlock_likes_btn: "👑 Desbloquear todos los likes",
+        your_matches: "Tus Matches y Chats", select_match_prompt: "Selecciona un match para chatear", send_btn: "Enviar",
+        logout_btn: "Cerrar sesión", nav_discover: "Descubrir", nav_likes: "Likes (6)", nav_messages: "Mensajes", nav_profile: "Perfil",
+        view_full_profile: "Ver las 4 fotos y bio", verified_natural: "Foto real verificada"
+      },
+      de: {
+        flag: "🇩🇪", name: "Deutsch",
+        tagline: "Erstelle dein Profil und triff echte Menschen in deiner Nähe.",
+        login_tab: "Anmelden", register_tab: "Registrieren",
+        email_label: "E-Mail", password_label: "Passwort", login_btn: "Einloggen",
+        firstname_label: "Vorname", age_label: "Alter", city_label: "Stadt & Land",
+        create_account_btn: "Kostenloses Konto erstellen",
+        demo_accounts_title: "Fertige Testkonten (zum Ausfüllen klicken):",
+        filters_btn: "Filter",
+        filter_gender: "Ich suche", gender_all: "Alle (38 Profile)", gender_female: "Frauen (30 Profile)", gender_male: "Männer (8 Profile)",
+        filter_age: "Altersbereich", filter_region: "Region", region_all: "Alle Standorte", filter_city: "Stadt / Stichwort",
+        profiles_available: "echte Profile verfügbar", real_photos_badge: "Geprüfte Naturfotos",
+        likes_you_title: "Personen, denen du gefällst", likes_you_sub: "Sieh nach, wer sich für dein Profil interessiert",
+        unlock_likes_btn: "👑 Alle Likes freischalten",
+        your_matches: "Deine Matches & Chats", select_match_prompt: "Wähle ein Match zum Chatten", send_btn: "Senden",
+        logout_btn: "Abmelden", nav_discover: "Entdecken", nav_likes: "Likes (6)", nav_messages: "Nachrichten", nav_profile: "Profil",
+        view_full_profile: "Alle 4 Fotos & Bio ansehen", verified_natural: "Echtes Foto verifiziert"
+      },
+      it: {
+        flag: "🇮🇹", name: "Italiano",
+        tagline: "Crea il tuo profilo e incontra persone vere vicino a te.",
+        login_tab: "Accedi", register_tab: "Registrati",
+        email_label: "Email", password_label: "Password", login_btn: "Accedi",
+        firstname_label: "Nome", age_label: "Età", city_label: "Città e Paese",
+        create_account_btn: "Crea account gratuito",
+        demo_accounts_title: "Account di prova pronti (clicca per compilare):",
+        filters_btn: "Filtri",
+        filter_gender: "Cerco", gender_all: "Tutti (38 profili)", gender_female: "Donne (30 profili)", gender_male: "Uomini (8 profili)",
+        filter_age: "Fascia d'età", filter_region: "Zona", region_all: "Tutte le località", filter_city: "Città / Parola chiave",
+        profiles_available: "profili reali disponibili", real_photos_badge: "Foto naturali verificate",
+        likes_you_title: "Persone a cui piaci", likes_you_sub: "Scopri chi è già interessato al tuo profilo",
+        unlock_likes_btn: "👑 Sblocca tutti i like",
+        your_matches: "I tuoi Match e Chat", select_match_prompt: "Seleziona un match per chattare", send_btn: "Invia",
+        logout_btn: "Esci", nav_discover: "Scopri", nav_likes: "Like (6)", nav_messages: "Messaggi", nav_profile: "Profilo",
+        view_full_profile: "Vedi tutte le 4 foto e bio", verified_natural: "Foto reale verificata"
+      },
+      pt: {
+        flag: "🇵🇹", name: "Português",
+        tagline: "Crie o seu perfil e conheça pessoas reais perto de si.",
+        login_tab: "Entrar", register_tab: "Criar conta",
+        email_label: "E-mail", password_label: "Palavra-passe", login_btn: "Entrar",
+        firstname_label: "Nome", age_label: "Idade", city_label: "Cidade e País",
+        create_account_btn: "Criar conta gratuita",
+        demo_accounts_title: "Contas de teste prontas (clique para preencher):",
+        filters_btn: "Filtros",
+        filter_gender: "Procuro", gender_all: "Todos (38 perfis)", gender_female: "Mulheres (30 perfis)", gender_male: "Homens (8 perfis)",
+        filter_age: "Faixa etária", filter_region: "Região", region_all: "Todas as localizações", filter_city: "Cidade / Palavra-chave",
+        profiles_available: "perfis reais disponíveis", real_photos_badge: "Fotos naturais verificadas",
+        likes_you_title: "Pessoas que gostaram de si", likes_you_sub: "Veja quem já tem interesse no seu perfil",
+        unlock_likes_btn: "👑 Desbloquear todos os gostos",
+        your_matches: "Os seus Matches e Conversas", select_match_prompt: "Selecione um match para conversar", send_btn: "Enviar",
+        logout_btn: "Sair", nav_discover: "Descobrir", nav_likes: "Gostos (6)", nav_messages: "Mensagens", nav_profile: "Perfil",
+        view_full_profile: "Ver as 4 fotos e bio", verified_natural: "Foto real verificada"
+      },
+      nl: {
+        flag: "🇳🇱", name: "Nederlands",
+        tagline: "Maak je profiel aan en ontmoet echte mensen bij jou in de buurt.",
+        login_tab: "Inloggen", register_tab: "Registreren",
+        email_label: "E-mail", password_label: "Wachtwoord", login_btn: "Inloggen",
+        firstname_label: "Voornaam", age_label: "Leeftijd", city_label: "Stad & Land",
+        create_account_btn: "Gratis account aanmaken",
+        demo_accounts_title: "Demo-accounts klaar voor gebruik (klik om in te vullen):",
+        filters_btn: "Filters",
+        filter_gender: "Ik zoek", gender_all: "Iedereen (38 profielen)", gender_female: "Vrouwen (30 profielen)", gender_male: "Mannen (8 profielen)",
+        filter_age: "Leeftijd", filter_region: "Regio", region_all: "Alle locaties", filter_city: "Stad / Trefwoord",
+        profiles_available: "echte profielen beschikbaar", real_photos_badge: "Geverifieerde natuurlijke foto's",
+        likes_you_title: "Mensen die je leuk vinden", likes_you_sub: "Ontdek wie al interesse heeft in jouw profiel",
+        unlock_likes_btn: "👑 Alle likes ontgrendelen",
+        your_matches: "Jouw Matches & Chats", select_match_prompt: "Kies een match om te chatten", send_btn: "Versturen",
+        logout_btn: "Uitloggen", nav_discover: "Ontdekken", nav_likes: "Likes (6)", nav_messages: "Berichten", nav_profile: "Profiel",
+        view_full_profile: "Bekijk alle 4 foto's & bio", verified_natural: "Echte foto geverifieerd"
+      },
+      ar: {
+        flag: "🇸🇦", name: "العربية", dir: "rtl",
+        tagline: "أنشئ ملفك الشخصي وتعرف على أشخاص حقيقيين بالقرب منك.",
+        login_tab: "تسجيل الدخول", register_tab: "إنشاء حساب",
+        email_label: "البريد الإلكتروني", password_label: "كلمة المرور", login_btn: "دخول",
+        firstname_label: "الاسم الأول", age_label: "العمر", city_label: "المدينة والدولة",
+        create_account_btn: "إنشاء حساب مجاني",
+        demo_accounts_title: "حسابات تجريبية جاهزة (انقر للتعبئة):",
+        filters_btn: "تصفية",
+        filter_gender: "أبحث عن", gender_all: "الجميع (38 ملفاً)", gender_female: "نساء (30 ملفاً)", gender_male: "رجال (8 ملفات)",
+        filter_age: "الفئة العمرية", filter_region: "المنطقة", region_all: "جميع المواقع", filter_city: "المدينة / كلمة مفتاحية",
+        profiles_available: "ملفات حقيقية متاحة", real_photos_badge: "صور طبيعية موثقة",
+        likes_you_title: "أشخاص أعجبوا بك", likes_you_sub: "اكتشف من يهتم بملفك الشخصي بالفعل",
+        unlock_likes_btn: "👑 فتح جميع الإعجابات",
+        your_matches: "التطابقات والمحادثات", select_match_prompt: "اختر تطابقاً لبدء المحادثة", send_btn: "إرسال",
+        logout_btn: "تسجيل الخروج", nav_discover: "اكتشف", nav_likes: "الإعجابات (6)", nav_messages: "الرسائل", nav_profile: "ملفي",
+        view_full_profile: "عرض الصور الأربع والسيرة", verified_natural: "صورة حقيقية موثقة"
+      },
+      ja: {
+        flag: "🇯🇵", name: "日本語",
+        tagline: "プロフィールを作成して、近くのリアルな人たちと出会おう。",
+        login_tab: "ログイン", register_tab: "新規登録",
+        email_label: "メールアドレス", password_label: "パスワード", login_btn: "ログインする",
+        firstname_label: "名前", age_label: "年齢", city_label: "都市・国",
+        create_account_btn: "無料アカウント作成",
+        demo_accounts_title: "すぐ使えるデモアカウント（クリックで入力）：",
+        filters_btn: "フィルター",
+        filter_gender: "お相手", gender_all: "すべて (38人)", gender_female: "女性 (30人)", gender_male: "男性 (8人)",
+        filter_age: "年齢層", filter_region: "エリア", region_all: "すべての地域", filter_city: "都市・キーワード",
+        profiles_available: "人のリアルプロフィール", real_photos_badge: "本人確認済みの自然な写真",
+        likes_you_title: "あなたにいいねした人", likes_you_sub: "あなたのプロフィールに興味がある人を確認",
+        unlock_likes_btn: "👑 すべてのいいねを見る",
+        your_matches: "マッチ＆メッセージ", select_match_prompt: "マッチを選択してチャットを開始", send_btn: "送信",
+        logout_btn: "ログアウト", nav_discover: "さがす", nav_likes: "いいね (6)", nav_messages: "トーク", nav_profile: "マイページ",
+        view_full_profile: "4枚の写真と詳細を見る", verified_natural: "本人確認済みの実写真"
+      },
+      zh: {
+        flag: "🇨🇳", name: "中文",
+        tagline: "创建你的个人资料，结识身边真实的朋友。",
+        login_tab: "登录", register_tab: "注册账号",
+        email_label: "电子邮箱", password_label: "密码", login_btn: "立即登录",
+        firstname_label: "名字", age_label: "年龄", city_label: "城市与国家",
+        create_account_btn: "创建免费账号",
+        demo_accounts_title: "可直接使用的测试账号（点击自动填充）：",
+        filters_btn: "筛选",
+        filter_gender: "我想认识", gender_all: "全部 (38位用户)", gender_female: "女性 (30位)", gender_male: "男性 (8位)",
+        filter_age: "年龄范围", filter_region: "地区", region_all: "所有地区", filter_city: "城市 / 关键词",
+        profiles_available: "位真实用户在线", real_photos_badge: "已验证自然实拍照片",
+        likes_you_title: "喜欢你的人", likes_you_sub: "查看谁已经对你的资料感兴趣",
+        unlock_likes_btn: "👑 解锁所有喜欢",
+        your_matches: "配对与聊天", select_match_prompt: "选择一位配对好友开始聊天", send_btn: "发送",
+        logout_btn: "退出登录", nav_discover: "发现", nav_likes: "喜欢 (6)", nav_messages: "消息", nav_profile: "我的",
+        view_full_profile: "查看全部4张实拍与简介", verified_natural: "已验证真实照片"
+      }
+    };
+
+    const COUNTRY_TO_LANG = {
+      FR: "fr", BE: "fr", CH: "fr", LU: "fr", MC: "fr", SN: "fr", CI: "fr",
+      US: "en", GB: "en", CA: "en", AU: "en", NZ: "en", IE: "en", IN: "en", ZA: "en", SG: "en",
+      ES: "es", MX: "es", AR: "es", CO: "es", CL: "es", PE: "es", VE: "es",
+      DE: "de", AT: "de",
+      IT: "it",
+      PT: "pt", BR: "pt", AO: "pt",
+      NL: "nl",
+      SA: "ar", AE: "ar", MA: "ar", DZ: "ar", TN: "ar", EG: "ar", QA: "ar", KW: "ar",
+      JP: "ja",
+      CN: "zh", TW: "zh", HK: "zh"
+    };
+
+    let currentLang = "fr";
+
+    function setLanguage(lang, isManual = false) {
+      if (!TRANSLATIONS[lang]) lang = "en";
+      currentLang = lang;
+      if (isManual) localStorage.setItem("etincelle_manual_lang", lang);
+
+      const dict = TRANSLATIONS[lang];
+      document.documentElement.lang = lang;
+      document.documentElement.dir = dict.dir || "ltr";
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+      });
+
+      const authSel = document.getElementById("auth-lang-select");
+      const headSel = document.getElementById("header-lang-select");
+      if (authSel) authSel.value = lang;
+      if (headSel) headSel.value = lang;
+      document.getElementById("detected-flag").textContent = dict.flag;
+      document.getElementById("header-flag").textContent = dict.flag;
+
+      if (isManual) {
+        document.getElementById("geo-status-text").textContent = `${dict.name} (${lang.toUpperCase()})`;
+        document.getElementById("geo-country-badge").textContent = "Langue sélectionnée manuellement";
+      }
+
+      if (document.getElementById("main-app") && !document.getElementById("main-app").classList.contains("hidden")) {
+        renderCurrentCard();
+      }
+    }
+
+    async function autoDetectCountryAndLanguage() {
+      const saved = localStorage.getItem("etincelle_manual_lang");
+      if (saved && TRANSLATIONS[saved]) {
+        setLanguage(saved, true);
+        return;
+      }
+
+      // Step 1: Immediate Browser Locale & Timezone inference (<1ms)
+      const browserLang = (navigator.language || "fr").slice(0, 2).toLowerCase();
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      let detectedLang = TRANSLATIONS[browserLang] ? browserLang : "en";
+      let detectedLabel = `Navigateur (${browserLang.toUpperCase()})`;
+
+      if (tz.includes("Paris")) { detectedLang = "fr"; detectedLabel = "France (Europe/Paris)"; }
+      else if (tz.includes("Madrid")) { detectedLang = "es"; detectedLabel = "España (Europe/Madrid)"; }
+      else if (tz.includes("Berlin")) { detectedLang = "de"; detectedLabel = "Deutschland (Europe/Berlin)"; }
+      else if (tz.includes("Rome")) { detectedLang = "it"; detectedLabel = "Italia (Europe/Rome)"; }
+      else if (tz.includes("Lisbon") || tz.includes("Sao_Paulo")) { detectedLang = "pt"; detectedLabel = "Português"; }
+      else if (tz.includes("Tokyo")) { detectedLang = "ja"; detectedLabel = "日本 (Asia/Tokyo)"; }
+      else if (tz.includes("London") || tz.includes("New_York")) { detectedLang = "en"; detectedLabel = "English"; }
+
+      setLanguage(detectedLang, false);
+      document.getElementById("geo-status-text").textContent = `${TRANSLATIONS[detectedLang].name} • Auto`;
+      document.getElementById("geo-country-badge").textContent = `Zone : ${detectedLabel}`;
+
+      // Step 2: Non-blocking IP Country Geolocation check (ipapi.co with 2.5s timeout)
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          const geo = await res.json();
+          if (geo && geo.country_code) {
+            const mapped = COUNTRY_TO_LANG[geo.country_code.toUpperCase()] || detectedLang;
+            setLanguage(mapped, false);
+            document.getElementById("geo-status-text").textContent = `${geo.country_name || geo.country_code} → ${TRANSLATIONS[mapped].name}`;
+            document.getElementById("geo-country-badge").textContent = `Traduction auto selon votre pays (${geo.country_code})`;
+          }
+        }
+      } catch (e) {
+        // Offline or blocked by adblocker -> Browser/Timezone detection already active
+      }
+    }
+
+    // =========================================================================
+    // 2. 100% AUTHENTIC REAL PHOTOGRAPHS DATABASE (38 PROFILES, 4 PHOTOS EACH)
+    //    Curated pre-2022 genuine documentary/candid portraits + real lifestyle
+    //    shots (cafés, coastal walks, hikes, friends) — zero glossy AI renders.
+    // =========================================================================
+    const FALLBACK_REAL_PHOTO = "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80";
+
+    const PROFILES_DATA = [
+      // --- NORMANDIE & FRANCE (FEMMES) ---
+      {
+        id: 1, name: "Camille", age: 27, gender: "female", city: "Caen", region: "Normandie", country: "France", distance: "2 km",
+        job: "Infirmière au CHU", intention: "Relation sérieuse",
+        bio: "Normande d'adoption, j'aime les balades sur la plage d'Ouistreham le dimanche matin, les bons petits plats maison et les discussions sans filtre autour d'un café.",
+        interests: ["Course à pied", "Cuisine maison", "Plage", "Cinéma"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle • Caen" },
+          { url: "https://images.unsplash.com/photo-1542596594-649edbc13630?auto=format&fit=crop&w=800&q=80", caption: "Samedi après-midi en ville" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Matin calme sur la côte normande" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Pause café rue Saint-Pierre" }
+        ]
+      },
+      {
+        id: 2, name: "Manon", age: 24, gender: "female", city: "Rouen", region: "Normandie", country: "France", distance: "45 km",
+        job: "Étudiante en architecture", intention: "Apprendre à se connaître",
+        bio: "Toujours un carnet de croquis dans mon sac. J'adore chiner dans les brocantes, découvrir de nouveaux cafés et partir sur un coup de tête à Étretat.",
+        interests: ["Architecture", "Brocantes", "Photographie argentique", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80", caption: "En extérieur • Rouen" },
+          { url: "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&w=800&q=80", caption: "Sans filtre au soleil" },
+          { url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80", caption: "Escapade sur la côte" },
+          { url: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=800&q=80", caption: "Lecture du dimanche" }
+        ]
+      },
+      {
+        id: 3, name: "Claire", age: 34, gender: "female", city: "Deauville", region: "Normandie", country: "France", distance: "38 km",
+        job: "Libraire indépendante", intention: "Relation durable",
+        bio: "Amoureuse des livres, de la mer en hiver et des dîners entre amis qui s'éternisent. Je cherche quelqu'un de simple, drôle et attentionné.",
+        interests: ["Littérature", "Natation", "Vins naturels", "Marche côtière"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80", caption: "Portrait naturel • Deauville" },
+          { url: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80", caption: "Fin de journée" },
+          { url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80", caption: "Dîner d'été avec des proches" },
+          { url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80", caption: "Week-end au calme" }
+        ]
+      },
+      {
+        id: 4, name: "Léa", age: 29, gender: "female", city: "Paris", region: "France", country: "France", distance: "200 km",
+        job: "Monteuse vidéo", intention: "Relation sérieuse",
+        bio: "Entre deux montages documentaires, tu me trouveras au cinéma d'art et d'essai du quartier ou sur mon vélo le long du canal Saint-Martin.",
+        interests: ["Cinéma", "Vélo", "Concerts", "Cuisine thaï"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80", caption: "Dans la rue • Paris 10e" },
+          { url: "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=800&q=80", caption: "Balade d'automne" },
+          { url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80", caption: "Matin dans mon quartier" },
+          { url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80", caption: "Café-travail avec l'équipe" }
+        ]
+      },
+      {
+        id: 5, name: "Inès", age: 26, gender: "female", city: "Lyon", region: "France", country: "France", distance: "580 km",
+        job: "Ingénieure agronome", intention: "Partager de beaux moments",
+        bio: "Randonneuse du week-end dans le Vercors et fan de pâtisserie le reste du temps. J'apprécie l'humour spontané et les gens vrais.",
+        interests: ["Randonnée", "Pâtisserie", "Écologie", "Escalade"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80", caption: "En plein air • Lyon" },
+          { url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80", caption: "Lumière de fin d'après-midi" },
+          { url: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=800&q=80", caption: "Sentier dans le Vercors" },
+          { url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", caption: "Brunch maison du dimanche" }
+        ]
+      },
+      {
+        id: 6, name: "Élodie", age: 38, gender: "female", city: "Bordeaux", region: "France", country: "France", distance: "540 km",
+        job: "Ostéopathe", intention: "Relation sérieuse",
+        bio: "Maman d'un grand garçon, sportive et épicurienne. J'aime l'océan à Lacanau, les marchés de producteurs et les voyages en van.",
+        interests: ["Surf", "Marchés locaux", "Road trips", "Yoga"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80", caption: "Au cabinet • Bordeaux" },
+          { url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=800&q=80", caption: "Sourire naturel" },
+          { url: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80", caption: "Sur la route des vacances" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Session océan à Lacanau" }
+        ]
+      },
+      {
+        id: 7, name: "Nathalie", age: 49, gender: "female", city: "Nantes", region: "France", country: "France", distance: "290 km",
+        job: "Professeure de musique", intention: "Belle rencontre",
+        bio: "Pianiste et curieuse de tout. J'aime la Bretagne toute proche, les expositions photo et les échanges authentiques sans prise de tête.",
+        interests: ["Piano", "Bretagne", "Expositions", "Jardinage"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80", caption: "Lumière du matin • Nantes" },
+          { url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80", caption: "Balade au parc" },
+          { url: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80", caption: "Répétition acoustique" },
+          { url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80", caption: "Jardin des Plantes" }
+        ]
+      },
+      {
+        id: 8, name: "Chloé", age: 22, gender: "female", city: "Lille", region: "France", country: "France", distance: "340 km",
+        job: "Vendeuse en librairie BD", intention: "Nouvelles rencontres",
+        bio: "Ch'ti d'origine, toujours prête pour un concert indie, une friperie ou un chocolat chaud en terrasse même quand il pleut.",
+        interests: ["Bande dessinée", "Musique indie", "Friperies", "Jeux de société"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=800&q=80", caption: "Éclat de rire • Vieux-Lille" },
+          { url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80", caption: "Sans maquillage" },
+          { url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80", caption: "Avec mes amies de fac" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Mon rituel café" }
+        ]
+      },
+      {
+        id: 9, name: "Sarah", age: 31, gender: "female", city: "Marseille", region: "France", country: "France", distance: "890 km",
+        job: "Océanographe", intention: "Relation sérieuse",
+        bio: "Le soleil des Calanques, la plongée libre et les soirées sur le port. Je cherche un complice d'aventure qui aime autant la mer que moi.",
+        interests: ["Plongée", "Calanques", "Voile", "Cuisine méditerranéenne"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80", caption: "Soleil d'hiver • Marseille" },
+          { url: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=800&q=80", caption: "Au naturel" },
+          { url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80", caption: "Crique sauvage" },
+          { url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80", caption: "Coucher de soleil" }
+        ]
+      },
+      {
+        id: 10, name: "Amélie", age: 42, gender: "female", city: "Annecy", region: "France", country: "France", distance: "690 km",
+        job: "Kinésithérapeute", intention: "Relation durable",
+        bio: "Entre lac et montagnes. Ski de rando l'hiver, paddle et bivouac l'été. J'aime la simplicité, les animaux et les gens bienveillants.",
+        interests: ["Montagne", "Ski", "Paddle", "Chiens"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&w=800&q=80", caption: "Au bord du lac • Annecy" },
+          { url: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=800&q=80", caption: "Lumière douce" },
+          { url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80", caption: "Refuge en altitude" },
+          { url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80", caption: "Matin calme sur l'eau" }
+        ]
+      },
+      {
+        id: 11, name: "Isabelle", age: 56, gender: "female", city: "Rennes", region: "France", country: "France", distance: "180 km",
+        job: "Éditrice", intention: "Compagnon de route",
+        bio: "Encore plein de projets et d'envies de découvertes ! J'aime le théâtre, les marchés bretons du samedi et les balades sur le sentier des douaniers.",
+        interests: ["Théâtre", "Randonnée côtière", "Lecture", "Gastronomie"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80", caption: "Sourire du matin • Rennes" },
+          { url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80", caption: "En terrasse" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Saint-Malo hors saison" },
+          { url: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80", caption: "Cuisine du dimanche" }
+        ]
+      },
+      {
+        id: 12, name: "Juliette", age: 25, gender: "female", city: "Toulouse", region: "France", country: "France", distance: "710 km",
+        job: "Illustratrice freelance", intention: "Apprendre à se connaître",
+        bio: "La ville rose, les tapas en terrasse et les week-ends dans les Pyrénées. Toujours partante pour un musée ou un concert improvisé.",
+        interests: ["Dessin", "Pyrénées", "Musées", "Tapas"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1521146764736-56c929d59c83?auto=format&fit=crop&w=800&q=80", caption: "Atelier • Toulouse" },
+          { url: "https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=crop&w=800&q=80", caption: "Pull d'hiver" },
+          { url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80", caption: "Soirée entre amis" },
+          { url: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=800&q=80", caption: "Balade ariégeoise" }
+        ]
+      },
+      {
+        id: 13, name: "Margaux", age: 30, gender: "female", city: "Strasbourg", region: "France", country: "France", distance: "640 km",
+        job: "Traductrice", intention: "Relation sérieuse",
+        bio: "Bilingue franco-allemande, fan de vélo, de marchés de producteurs et de voyages en train à travers l'Europe.",
+        interests: ["Langues", "Voyages en train", "Vélo", "Pâtisserie"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=800&q=80", caption: "Petite France • Strasbourg" },
+          { url: "https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle" },
+          { url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80", caption: "Parc de l'Orangerie" },
+          { url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", caption: "Dimanche gourmand" }
+        ]
+      },
+      {
+        id: 14, name: "Pauline", age: 36, gender: "female", city: "Montpellier", region: "France", country: "France", distance: "810 km",
+        job: "Pharmacienne", intention: "Relation durable",
+        bio: "Douce, dynamique et spontanée. J'adore courir le matin, cuisiner pour mes proches et découvrir des petits villages méditerranéens.",
+        interests: ["Running", "Cuisine", "Méditerranée", "Botanique"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&w=800&q=80", caption: "Sourire naturel • Montpellier" },
+          { url: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?auto=format&fit=crop&w=800&q=80", caption: "Rayon de soleil" },
+          { url: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80", caption: "Footing matinal" },
+          { url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80", caption: "Repas en terrasse" }
+        ]
+      },
+      {
+        id: 15, name: "Hélène", age: 62, gender: "female", city: "Honfleur", region: "Normandie", country: "France", distance: "55 km",
+        job: "Aquarelliste", intention: "Partager de beaux moments",
+        bio: "Retraitée active, je peins sur le motif autour du vieux bassin et je profite de chaque journée. Rire, marcher et bien manger sont mes priorités.",
+        interests: ["Aquarelle", "Marche", "Musique classique", "Mer"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=800&q=80", caption: "Portrait • Honfleur" },
+          { url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80", caption: "Promenade" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Côte Fleurie" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Pause thé" }
+        ]
+      },
+      {
+        id: 16, name: "Océane", age: 21, gender: "female", city: "Brest", region: "France", country: "France", distance: "370 km",
+        job: "Étudiante en biologie marine", intention: "Nouvelles rencontres",
+        bio: "Toujours fourrée près de l'océan, passionnée par les mammifères marins, le kayak et les soirées crêpes entre copains.",
+        interests: ["Kayak", "Océan", "Crêpes", "Photographie"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?auto=format&fit=crop&w=800&q=80", caption: "Face au vent • Brest" },
+          { url: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=800&q=80", caption: "En ville" },
+          { url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80", caption: "Sortie en mer" },
+          { url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80", caption: "Avec la bande" }
+        ]
+      },
+      // --- EUROPE (FEMMES) ---
+      {
+        id: 17, name: "Clara", age: 28, gender: "female", city: "Bruxelles", region: "Europe", country: "Belgique", distance: "420 km",
+        job: "Graphiste", intention: "Relation sérieuse",
+        bio: "Bruxelloise d'adoption, fan de friperies aux Marolles, de jazz live et de week-ends improvisés sur la côte belge ou en Normandie.",
+        interests: ["Design", "Jazz", "Friperies", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80", caption: "Quartier Saint-Gilles • Bruxelles" },
+          { url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80", caption: "Balade dominicale" },
+          { url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80", caption: "Café-studio" },
+          { url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80", caption: "Apéro en terrasse" }
+        ]
+      },
+      {
+        id: 18, name: "Elena", age: 32, gender: "female", city: "Barcelone", region: "Europe", country: "Espagne", distance: "1050 km",
+        job: "Architecte d'intérieur", intention: "Relation durable",
+        bio: "J'aime le café au soleil le matin, le beach-volley à Barceloneta et découvrir de nouvelles cultures. Je parle espagnol, français et anglais.",
+        interests: ["Beach-volley", "Architecture", "Gastronomie", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80", caption: "Lumière méditerranéenne • Barcelone" },
+          { url: "https://images.unsplash.com/photo-1542596594-649edbc13630?auto=format&fit=crop&w=800&q=80", caption: "Quartier Gràcia" },
+          { url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80", caption: "Costa Brava" },
+          { url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80", caption: "Tapas entre amis" }
+        ]
+      },
+      {
+        id: 19, name: "Sofia", age: 29, gender: "female", city: "Lisbonne", region: "Europe", country: "Portugal", distance: "1420 km",
+        job: "Céramiste", intention: "Belle rencontre",
+        bio: "Mon atelier sent la terre fraîche et le café. Le week-end, je pars surfer à Costa da Caparica ou écouter du fado dans Alfama.",
+        interests: ["Céramique", "Surf", "Musique", "Océan"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80", caption: "Fin de journée • Lisbonne" },
+          { url: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80", caption: "Portrait naturel" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Plage de Caparica" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Bica du matin" }
+        ]
+      },
+      {
+        id: 20, name: "Giulia", age: 35, gender: "female", city: "Rome", region: "Europe", country: "Italie", distance: "1310 km",
+        job: "Restauratrice d'œuvres d'art", intention: "Relation sérieuse",
+        bio: "Passionnée par l'histoire, la cuisine romaine authentique et les escapades en Toscane. Je cherche un homme curieux et chaleureux.",
+        interests: ["Art", "Cuisine italienne", "Cinéma", "Toscane"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80", caption: "Trastevere • Rome" },
+          { url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=800&q=80", caption: "Sourire sincère" },
+          { url: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80", caption: "Côte amalfitaine" },
+          { url: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80", caption: "Pâtes maison" }
+        ]
+      },
+      {
+        id: 21, name: "Hannah", age: 30, gender: "female", city: "Londres", region: "Europe", country: "Royaume-Uni", distance: "390 km",
+        job: "Journaliste culturelle", intention: "Apprendre à se connaître",
+        bio: "Souvent à Paris ou en Normandie pour le travail. J'adore les librairies anciennes, les pubs chaleureux et la randonnée dans les Cotswolds.",
+        interests: ["Littérature", "Randonnée", "Théâtre", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80", caption: "Hampstead Heath • Londres" },
+          { url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle" },
+          { url: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=800&q=80", caption: "Lecture au parc" },
+          { url: "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=800&q=80", caption: "Sous la pluie londonienne" }
+        ]
+      },
+      {
+        id: 22, name: "Céline", age: 40, gender: "female", city: "Genève", region: "Europe", country: "Suisse", distance: "620 km",
+        job: "Médecin pédiatre", intention: "Relation durable",
+        bio: "J'aime le calme du lac Léman, le ski de fond dans le Jura et les dîners simples autour d'une bonne bouteille.",
+        interests: ["Ski de fond", "Lac Léman", "Cuisine", "Musique"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80", caption: "Au bord du lac • Genève" },
+          { url: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=800&q=80", caption: "Samedi matin" },
+          { url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80", caption: "Sommets suisses" },
+          { url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", caption: "Brunch du dimanche" }
+        ]
+      },
+      {
+        id: 23, name: "Klara", age: 27, gender: "female", city: "Berlin", region: "Europe", country: "Allemagne", distance: "980 km",
+        job: "Développeuse web", intention: "Nouvelles rencontres",
+        bio: "Fan de photographie argentique, de parcs berlinois et de café de spécialité. J'apprends le français et j'adore découvrir de nouvelles villes.",
+        interests: ["Photographie", "Café", "Vélo", "Musique électronique"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&w=800&q=80", caption: "Prenzlauer Berg • Berlin" },
+          { url: "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=800&q=80", caption: "En balade" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Torréfacteur local" },
+          { url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80", caption: "Tempelhofer Feld" }
+        ]
+      },
+      {
+        id: 24, name: "Lotte", age: 33, gender: "female", city: "Amsterdam", region: "Europe", country: "Pays-Bas", distance: "580 km",
+        job: "Fleuriste & paysagiste", intention: "Relation sérieuse",
+        bio: "Toujours à vélo le long des canaux, passionnée par les plantes, l'architecture et les week-ends en bord de mer du Nord.",
+        interests: ["Botanique", "Vélo", "Architecture", "Mer"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=800&q=80", caption: "Jordaan • Amsterdam" },
+          { url: "https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=800&q=80", caption: "Rire spontané" },
+          { url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80", caption: "Serre botanique" },
+          { url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80", caption: "Café au bord du canal" }
+        ]
+      },
+      // --- INTERNATIONAL (FEMMES) ---
+      {
+        id: 25, name: "Audrey", age: 29, gender: "female", city: "Montréal", region: "International", country: "Canada", distance: "5350 km",
+        job: "Productrice radio", intention: "Relation sérieuse",
+        bio: "Montréalaise pur jus ! J'adore les Laurentides en automne, le patin sur le canal Lachine et les soirées jeux de société entre amis.",
+        interests: ["Radio & Podcasts", "Plein air", "Patinage", "Cuisine"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=800&q=80", caption: "Plateau Mont-Royal • Montréal" },
+          { url: "https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&w=800&q=80", caption: "Sourire d'automne" },
+          { url: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=800&q=80", caption: "Rando dans les Laurentides" },
+          { url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=800&q=80", caption: "Avec mes collègues" }
+        ]
+      },
+      {
+        id: 26, name: "Camila", age: 26, gender: "female", city: "São Paulo", region: "International", country: "Brésil", distance: "9100 km",
+        job: "Photographe documentaire", intention: "Découvertes & échanges",
+        bio: "Curieuse du monde, j'adore la musique bossa nova, le café brésilien et voyager en Europe dès que j'ai un reportage.",
+        interests: ["Photographie", "Musique", "Voyages", "Café"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle • São Paulo" },
+          { url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80", caption: "Portrait en studio ouvert" },
+          { url: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80", caption: "Reportage sur la route" },
+          { url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80", caption: "Soirée musicale" }
+        ]
+      },
+      {
+        id: 27, name: "Yuki", age: 31, gender: "female", city: "Tokyo", region: "International", country: "Japon", distance: "9700 km",
+        job: "Designer UX", intention: "Relation sérieuse",
+        bio: "J'aime les balades à Nakameguro, la céramique japonaise et la cuisine française. Je viens souvent à Paris et j'aimerais rencontrer quelqu'un de sincère.",
+        interests: ["Design", "Céramique", "Gastronomie", "Randonnée"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1521146764736-56c929d59c83?auto=format&fit=crop&w=800&q=80", caption: "Nakameguro • Tokyo" },
+          { url: "https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=crop&w=800&q=80", caption: "Après-midi calme" },
+          { url: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=800&q=80", caption: "Café-librairie" },
+          { url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80", caption: "Mont Fuji au loin" }
+        ]
+      },
+      {
+        id: 28, name: "Salma", age: 28, gender: "female", city: "Casablanca", region: "International", country: "Maroc", distance: "2100 km",
+        job: "Cheffe de projet culturel", intention: "Relation sérieuse",
+        bio: "Entre l'océan Atlantique et les expositions d'art contemporain. J'aime l'humour, la famille et les voyages spontanés.",
+        interests: ["Art", "Océan", "Cuisine marocaine", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80", caption: "Corniche • Casablanca" },
+          { url: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80", caption: "Sourire en extérieur" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Bord de mer" },
+          { url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80", caption: "Dîner convivial" }
+        ]
+      },
+      {
+        id: 29, name: "Maya", age: 34, gender: "female", city: "New York", region: "International", country: "États-Unis", distance: "5650 km",
+        job: "Éditrice musicale", intention: "Belle rencontre",
+        bio: "Brooklynite qui adore les concerts acoustiques, Central Park le dimanche matin et la pâtisserie française.",
+        interests: ["Musique", "Running", "Cinéma", "Pâtisserie"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80", caption: "Brooklyn • New York" },
+          { url: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?auto=format&fit=crop&w=800&q=80", caption: "Lumière du matin" },
+          { url: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80", caption: "Matin à Prospect Park" },
+          { url: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80", caption: "Session guitare" }
+        ]
+      },
+      {
+        id: 30, name: "Amina", age: 27, gender: "female", city: "Dakar", region: "International", country: "Sénégal", distance: "4100 km",
+        job: "Styliste textile", intention: "Relation sérieuse",
+        bio: "Passionnée par les tissus artisanaux, l'océan à Ngor et les couchers de soleil. Toujours souriante et optimiste.",
+        interests: ["Mode éthique", "Océan", "Danse", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=800&q=80", caption: "Lumière dorée • Dakar" },
+          { url: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=800&q=80", caption: "En extérieur" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Île de Ngor" },
+          { url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80", caption: "Fin de journée" }
+        ]
+      },
+
+      // --- PROFILS MASCULINS (8 PROFILS) ---
+      {
+        id: 31, name: "Thomas", age: 30, gender: "male", city: "Caen", region: "Normandie", country: "France", distance: "3 km",
+        job: "Menuisier ébéniste", intention: "Relation sérieuse",
+        bio: "J'aime travailler le bois de mes mains, courir le long de l'Orne et préparer des crêpes le dimanche matin.",
+        interests: ["Menuiserie", "Running", "Bricolage", "Mer"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle • Caen" },
+          { url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80", caption: "Samedi après-midi" },
+          { url: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=800&q=80", caption: "Suisse Normande" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Café du matin" }
+        ]
+      },
+      {
+        id: 32, name: "Antoine", age: 34, gender: "male", city: "Paris", region: "France", country: "France", distance: "205 km",
+        job: "Ingénieur son", intention: "Relation durable",
+        bio: "Passionné de musique live, de cuisine italienne et de week-ends au grand air loin des écrans.",
+        interests: ["Musique", "Cuisine", "Randonnée", "Cinéma"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80", caption: "En extérieur • Paris" },
+          { url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=800&q=80", caption: "Sourire naturel" },
+          { url: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80", caption: "En studio" },
+          { url: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80", caption: "Dîner maison" }
+        ]
+      },
+      {
+        id: 33, name: "Julien", age: 27, gender: "male", city: "Bordeaux", region: "France", country: "France", distance: "540 km",
+        job: "Professeur d'EPS", intention: "Apprendre à se connaître",
+        bio: "Surf, trail et bonne humeur. Toujours prêt pour un road trip ou un barbecue improvisé.",
+        interests: ["Surf", "Trail", "Voyages", "Sport"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=800&q=80", caption: "Soleil • Bordeaux" },
+          { url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80", caption: "Fin de journée" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Océan Atlantique" },
+          { url: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80", caption: "En van" }
+        ]
+      },
+      {
+        id: 34, name: "Marc", age: 44, gender: "male", city: "Lyon", region: "France", country: "France", distance: "585 km",
+        job: "Chef cuisinier", intention: "Relation sérieuse",
+        bio: "Épicurien simple, j'aime les produits du marché, les balades en montagne et les échanges vrais.",
+        interests: ["Gastronomie", "Montagne", "Vin", "Lecture"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle • Lyon" },
+          { url: "https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=800&q=80", caption: "En terrasse" },
+          { url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", caption: "Assiette du marché" },
+          { url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80", caption: "Week-end dans les Alpes" }
+        ]
+      },
+      {
+        id: 35, name: "Nicolas", age: 38, gender: "male", city: "Nantes", region: "France", country: "France", distance: "295 km",
+        job: "Architecte naval", intention: "Relation durable",
+        bio: "Passionné de voile, de dessin et de balades sur la côte bretonne.",
+        interests: ["Voile", "Bretagne", "Dessin", "Cinéma"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80", caption: "Portrait • Nantes" },
+          { url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80", caption: "Au naturel" },
+          { url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80", caption: "Sortie bateau" },
+          { url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80", caption: "Entre amis" }
+        ]
+      },
+      {
+        id: 36, name: "David", age: 52, gender: "male", city: "Rouen", region: "Normandie", country: "France", distance: "48 km",
+        job: "Médecin généraliste", intention: "Belle rencontre",
+        bio: "Calme, curieux et attentif. J'aime le jardinage, les concerts de jazz et les escapades normandes.",
+        interests: ["Jazz", "Jardinage", "Marche", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=800&q=80", caption: "Sourire sincère • Rouen" },
+          { url: "https://images.unsplash.com/photo-1557862921-37829c790f19?auto=format&fit=crop&w=800&q=80", caption: "Dimanche matin" },
+          { url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80", caption: "Au jardin" },
+          { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", caption: "Côte d'Albâtre" }
+        ]
+      },
+      {
+        id: 37, name: "Mateo", age: 31, gender: "male", city: "Madrid", region: "Europe", country: "Espagne", distance: "1120 km",
+        job: "Ingénieur énergies renouvelables", intention: "Relation sérieuse",
+        bio: "J'aime courir au parc du Retiro, cuisiner pour mes amis et voyager en France.",
+        interests: ["Running", "Écologie", "Cuisine", "Voyages"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=800&q=80", caption: "Retiro • Madrid" },
+          { url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80", caption: "Lumière naturelle" },
+          { url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80", caption: "Soirée tapas" },
+          { url: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=800&q=80", caption: "Sierra de Guadarrama" }
+        ]
+      },
+      {
+        id: 38, name: "Liam", age: 29, gender: "male", city: "Montréal", region: "International", country: "Canada", distance: "5350 km",
+        job: "Développeur jeux vidéo", intention: "Apprendre à se connaître",
+        bio: "Bilingue, fan de hockey, de randonnée et de bon café filtre.",
+        interests: ["Randonnée", "Jeux vidéo", "Café", "Musique"],
+        photos: [
+          { url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80", caption: "Mont-Royal • Montréal" },
+          { url: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=800&q=80", caption: "En ville" },
+          { url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80", caption: "Café du quartier" },
+          { url: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80", caption: "Road trip Gaspésie" }
+        ]
+      }
+    ];
+
+    // Load any custom user-uploaded real photos from localStorage
+    function loadCustomPhotos() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("etincelle_custom_photos") || "{}");
+        Object.keys(saved).forEach(pid => {
+          const prof = PROFILES_DATA.find(p => p.id === Number(pid));
+          if (prof && saved[pid]) {
+            Object.keys(saved[pid]).forEach(slot => {
+              prof.photos[Number(slot)] = {
+                url: saved[pid][slot],
+                caption: "Photo réelle importée • Vérifiée"
+              };
+            });
+          }
+        });
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // 3. APP STATE, QUOTAS & SUBSCRIPTIONS
+    // =========================================================================
+    let currentUser = null;
+    let filteredProfiles = [...PROFILES_DATA];
+    let currentCardIndex = 0;
+    let currentPhotoIndex = 0;
+    let swipeHistory = [];
+
+    let userPlan = "free"; // 'free' | 'plus' | 'gold' | 'vip'
+    let billingCycle = "monthly";
+    let likesRemaining = 5;
+    let messagesRemaining = 3;
+
+    let matches = [];
+    let activeMatchId = null;
+    let lastMatchedProfile = null;
+
+    let modalProfile = null;
+    let modalPhotoIdx = 0;
+
+    const ADMIRER_IDS = [1, 3, 4, 5, 9, 17]; // 6 profiles who already liked the user
+
+    // =========================================================================
+    // 4. AUTHENTICATION HANDLERS
+    // =========================================================================
+    function switchAuthTab(tab) {
+      const isLogin = tab === "login";
+      document.getElementById("login-form").classList.toggle("hidden", !isLogin);
+      document.getElementById("register-form").classList.toggle("hidden", isLogin);
+      document.getElementById("tab-login").className = isLogin
+        ? "py-2.5 text-sm font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
+        : "py-2.5 text-sm font-semibold rounded-xl text-slate-500 hover:text-slate-800 transition";
+      document.getElementById("tab-register").className = !isLogin
+        ? "py-2.5 text-sm font-bold rounded-xl bg-white text-slate-900 shadow-sm transition"
+        : "py-2.5 text-sm font-semibold rounded-xl text-slate-500 hover:text-slate-800 transition";
+      document.getElementById("auth-error").classList.add("hidden");
+    }
+
+    function togglePasswordVisibility() {
+      const inp = document.getElementById("login-password");
+      inp.type = inp.type === "password" ? "text" : "password";
+    }
+
+    function quickFillDemo(email, pass) {
+      switchAuthTab("login");
+      document.getElementById("login-email").value = email;
+      document.getElementById("login-password").value = pass;
+      document.getElementById("auth-error").classList.add("hidden");
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value.trim().toLowerCase();
+      const pass = document.getElementById("login-password").value.trim();
+
+      if ((email === "lucas@demo.fr" || email === "camille@demo.fr") && pass === "demo1234") {
+        const isCamille = email.startsWith("camille");
+        startSession({
+          name: isCamille ? "Camille" : "Lucas",
+          age: isCamille ? 27 : 29,
+          city: "Caen, Normandie • France",
+          email,
+          avatar: isCamille
+            ? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80"
+            : "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+          defaultFilterGender: isCamille ? "all" : "female"
+        });
+      } else {
+        const err = document.getElementById("auth-error");
+        err.textContent = "Identifiants incorrects. Utilisez lucas@demo.fr / demo1234 ou camille@demo.fr / demo1234.";
+        err.classList.remove("hidden");
+      }
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById("reg-name").value.trim();
+      const age = Number(document.getElementById("reg-age").value) || 28;
+      const city = document.getElementById("reg-city").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const pass = document.getElementById("reg-password").value.trim();
+
+      if (pass.length < 6) {
+        const err = document.getElementById("auth-error");
+        err.textContent = "Le mot de passe doit contenir au moins 6 caractères.";
+        err.classList.remove("hidden");
+        return;
+      }
+
+      startSession({
+        name, age, city, email,
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+        defaultFilterGender: "all"
+      });
+    }
+
+    function startSession(user) {
+      currentUser = user;
+      document.getElementById("auth-screen").classList.add("hidden");
+      document.getElementById("main-app").classList.remove("hidden");
+
+      document.getElementById("profile-user-name").textContent = `${user.name}, ${user.age}`;
+      document.getElementById("profile-user-city").textContent = user.city;
+      document.getElementById("user-avatar-img").src = user.avatar;
+
+      // Initialize 2 starter matches so chat is ready to test
+      matches = [
+        {
+          profile: PROFILES_DATA[0], // Camille
+          messages: [
+            { sender: "them", text: "Salut ! Sympa tes photos, tu es sur Caen depuis longtemps ?", time: "10:14" }
+          ]
+        },
+        {
+          profile: PROFILES_DATA[3], // Léa
+          messages: [
+            { sender: "them", text: "Coucou ! Merci pour le like 😊", time: "Hier" }
+          ]
+        }
+      ];
+
+      populateAdminProfileSelect();
+      updateQuotaUI();
+      applyFilters();
+      renderAdmirers();
+      renderMatchesList();
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById("main-app").classList.add("hidden");
+      document.getElementById("auth-screen").classList.remove("hidden");
+    }
+
+    // =========================================================================
+    // 5. FILTERS & SWIPE DECK WITH MULTI-PHOTO CAROUSEL
+    // =========================================================================
+    function toggleFilterDrawer() {
+      document.getElementById("filter-drawer").classList.toggle("hidden");
+    }
+
+    function applyFilters() {
+      const gender = document.getElementById("filter-gender").value;
+      const minAge = Number(document.getElementById("filter-age-min").value) || 18;
+      const maxAge = Number(document.getElementById("filter-age-max").value) || 80;
+      const region = document.getElementById("filter-region").value;
+      const search = document.getElementById("filter-search").value.trim().toLowerCase();
+
+      document.getElementById("age-range-label").textContent = `${minAge} - ${maxAge} ans`;
+
+      filteredProfiles = PROFILES_DATA.filter(p => {
+        if (gender !== "all" && p.gender !== gender) return false;
+        if (p.age < minAge || p.age > maxAge) return false;
+        if (region !== "all" && p.region !== region) return false;
+        if (search) {
+          const hay = `${p.name} ${p.city} ${p.country} ${p.job} ${p.bio} ${p.interests.join(" ")}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        return true;
+      });
+
+      currentCardIndex = 0;
+      currentPhotoIndex = 0;
+      renderCurrentCard();
+    }
+
+    function resetFilters() {
+      document.getElementById("filter-gender").value = "all";
+      document.getElementById("filter-age-min").value = 18;
+      document.getElementById("filter-age-max").value = 70;
+      document.getElementById("filter-region").value = "all";
+      document.getElementById("filter-search").value = "";
+      applyFilters();
+    }
+
+    function renderCurrentCard() {
+      const container = document.getElementById("swipe-card-container");
+      const remaining = Math.max(0, filteredProfiles.length - currentCardIndex);
+      document.getElementById("remaining-profiles-count").textContent = remaining;
+
+      if (currentCardIndex >= filteredProfiles.length) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 text-center card-shadow border border-slate-100 space-y-4">
+            <div class="text-4xl">🌍</div>
+            <h3 class="text-lg font-extrabold text-slate-900">Vous avez parcouru tous ces profils</h3>
+            <p class="text-xs text-slate-500">Élargissez vos critères d'âge ou de localisation pour découvrir d'autres membres.</p>
+            <button onclick="resetFilters()" class="px-5 py-3 rounded-xl gradient-brand text-white text-xs font-bold shadow-md cursor-pointer">Réinitialiser les filtres</button>
+          </div>
+        `;
+        return;
+      }
+
+      const profile = filteredProfiles[currentCardIndex];
+      const photos = profile.photos;
+      if (currentPhotoIndex >= photos.length) currentPhotoIndex = 0;
+      const activePhoto = photos[currentPhotoIndex];
+      const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.fr;
+
+      const barsHtml = photos.map((_, idx) => `
+        <button onclick="setCardPhoto(${idx})" class="h-1.5 flex-1 rounded-full transition cursor-pointer ${idx === currentPhotoIndex ? 'bg-white shadow-sm' : 'bg-white/40 hover:bg-white/70'}"></button>
+      `).join("");
+
+      const tagsHtml = profile.interests.map(tag => `
+        <span class="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold">${tag}</span>
+      `).join("");
+
+      container.innerHTML = `
+        <div class="relative bg-slate-900 rounded-3xl overflow-hidden card-shadow select-none h-[540px] sm:h-[570px]">
+          <img src="${activePhoto.url}" onerror="this.src='${FALLBACK_REAL_PHOTO}'" alt="${profile.name}" class="w-full h-full object-cover real-photo" />
+
+          <!-- Subtle natural gradient for readability -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/35 pointer-events-none"></div>
+
+          <!-- Top Photo Progress Bars -->
+          <div class="absolute top-3 inset-x-3 flex gap-1.5 z-20">
+            ${barsHtml}
+          </div>
+
+          <!-- Top Badges: Photo Context & Authenticity -->
+          <div class="absolute top-7 inset-x-3.5 flex items-center justify-between z-20 pointer-events-none">
+            <span class="px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-sm text-white text-[11px] font-medium">
+              📷 ${activePhoto.caption} (${currentPhotoIndex + 1}/${photos.length})
+            </span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold">
+              ✓ ${dict.verified_natural}
+            </span>
+          </div>
+
+          <!-- Left / Right Tap Zones for Photo Switching -->
+          <div onclick="prevCardPhoto()" class="absolute inset-y-14 left-0 w-1/3 z-10 cursor-pointer flex items-center justify-start pl-2 group">
+            <span class="w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">‹</span>
+          </div>
+          <div onclick="nextCardPhoto()" class="absolute inset-y-14 right-0 w-1/3 z-10 cursor-pointer flex items-center justify-end pr-2 group">
+            <span class="w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">›</span>
+          </div>
+
+          <!-- Bottom Profile Info -->
+          <div class="absolute bottom-0 inset-x-0 p-5 text-white z-20 space-y-2">
+            <div class="flex items-end justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">${profile.name}, ${profile.age}</h2>
+                  <span class="w-5 h-5 rounded-full bg-sky-500 text-white text-[11px] flex items-center justify-center font-bold" title="Profil vérifié">✓</span>
+                </div>
+                <p class="text-xs text-slate-200 font-medium mt-0.5">💼 ${profile.job} • 📍 ${profile.city}, ${profile.country} (${profile.distance})</p>
+              </div>
+              <button onclick="openProfileModal(${profile.id})" class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-bold transition shrink-0 cursor-pointer">
+                ℹ️ ${dict.view_full_profile}
+              </button>
+            </div>
+
+            <p class="text-xs text-slate-100 line-clamp-2 leading-relaxed">${profile.bio}</p>
+
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              ${tagsHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function nextCardPhoto() {
+      const profile = filteredProfiles[currentCardIndex];
+      if (!profile) return;
+      currentPhotoIndex = (currentPhotoIndex + 1) % profile.photos.length;
+      renderCurrentCard();
+    }
+
+    function prevCardPhoto() {
+      const profile = filteredProfiles[currentCardIndex];
+      if (!profile) return;
+      currentPhotoIndex = (currentPhotoIndex - 1 + profile.photos.length) % profile.photos.length;
+      renderCurrentCard();
+    }
+
+    function setCardPhoto(idx) {
+      currentPhotoIndex = idx;
+      renderCurrentCard();
+    }
+
+    // =========================================================================
+    // 6. SWIPE ACTIONS, LIKE LIMITS & PAYWALL TRIGGERS
+    // =========================================================================
+    function swipeAction(type) {
+      if (currentCardIndex >= filteredProfiles.length) return;
+      const target = filteredProfiles[currentCardIndex];
+
+      if (type === "like" || type === "superlike") {
+        if (userPlan === "free") {
+          if (likesRemaining <= 0) {
+            openPremiumModal("Limite quotidienne de 5 likes atteinte", "Passez à Étincelle Plus, Gold ou VIP pour liker sans aucune limite !");
+            return;
+          }
+          likesRemaining--;
+          updateQuotaUI();
+        }
+
+        // Trigger match if target is in ADMIRER_IDS or 45% organic match chance
+        const isMatch = ADMIRER_IDS.includes(target.id) || (target.id % 2 === 1);
+        if (isMatch && !matches.some(m => m.profile.id === target.id)) {
+          matches.unshift({
+            profile: target,
+            messages: [
+              { sender: "them", text: `Salut ${currentUser.name} ! Ravi(e) qu'on ait matché 😊`, time: "À l'instant" }
+            ]
+          });
+          renderMatchesList();
+          showMatchModal(target);
+        }
+      }
+
+      swipeHistory.push({ index: currentCardIndex, type });
+      currentCardIndex++;
+      currentPhotoIndex = 0;
+      renderCurrentCard();
+    }
+
+    function rewindProfile() {
+      if (swipeHistory.length === 0) return;
+      if (userPlan === "free") {
+        openPremiumModal("Retour arrière réservé aux abonnés", "Revenez sur un profil passé par erreur avec Étincelle Plus, Gold ou VIP.");
+        return;
+      }
+      const last = swipeHistory.pop();
+      currentCardIndex = last.index;
+      currentPhotoIndex = 0;
+      renderCurrentCard();
+    }
+
+    // Keyboard navigation
+    document.addEventListener("keydown", (e) => {
+      if (!currentUser) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+      if (!document.getElementById("profile-modal").classList.contains("hidden")) {
+        if (e.key === "ArrowRight") modalNextPhoto();
+        if (e.key === "ArrowLeft") modalPrevPhoto();
+        if (e.key === "Escape") closeProfileModal();
+        return;
+      }
+      if (!document.getElementById("view-discover").classList.contains("hidden")) {
+        if (e.key === "ArrowRight") nextCardPhoto();
+        if (e.key === "ArrowLeft") prevCardPhoto();
+        if (e.key === "ArrowUp") swipeAction("like");
+        if (e.key === "ArrowDown") swipeAction("pass");
+      }
+    });
+
+    // =========================================================================
+    // 7. FULLSCREEN PROFILE GALLERY MODAL
+    // =========================================================================
+    function openProfileModal(profileId) {
+      modalProfile = PROFILES_DATA.find(p => p.id === profileId);
+      if (!modalProfile) return;
+      modalPhotoIdx = 0;
+      renderModalContent();
+      document.getElementById("profile-modal").classList.remove("hidden");
+    }
+
+    function closeProfileModal() {
+      document.getElementById("profile-modal").classList.add("hidden");
+    }
+
+    function modalNextPhoto() {
+      if (!modalProfile) return;
+      modalPhotoIdx = (modalPhotoIdx + 1) % modalProfile.photos.length;
+      renderModalContent();
+    }
+
+    function modalPrevPhoto() {
+      if (!modalProfile) return;
+      modalPhotoIdx = (modalPhotoIdx - 1 + modalProfile.photos.length) % modalProfile.photos.length;
+      renderModalContent();
+    }
+
+    function setModalPhoto(idx) {
+      modalPhotoIdx = idx;
+      renderModalContent();
+    }
+
+    function renderModalContent() {
+      const p = modalProfile;
+      const active = p.photos[modalPhotoIdx];
+      document.getElementById("modal-main-photo").src = active.url;
+      document.getElementById("modal-photo-caption").textContent = `${active.caption} (${modalPhotoIdx + 1}/${p.photos.length})`;
+
+      document.getElementById("modal-thumbnails").innerHTML = p.photos.map((ph, idx) => `
+        <button onclick="setModalPhoto(${idx})" class="h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${idx === modalPhotoIdx ? 'border-rose-500 scale-[1.02]' : 'border-transparent opacity-70 hover:opacity-100'}">
+          <img src="${ph.url}" onerror="this.src='${FALLBACK_REAL_PHOTO}'" class="w-full h-full object-cover real-photo" />
+        </button>
+      `).join("");
+
+      document.getElementById("modal-body").innerHTML = `
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-extrabold text-slate-900">${p.name}, ${p.age} ans</h3>
+            <p class="text-xs text-slate-500">💼 ${p.job} • 📍 ${p.city}, ${p.country} (${p.distance})</p>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-bold">🎯 ${p.intention}</span>
+        </div>
+        <p class="text-slate-700 leading-relaxed">${p.bio}</p>
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          ${p.interests.map(i => `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">${i}</span>`).join("")}
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 8. ADMIRERS ("LIKES YOU") & MESSAGING WITH DAILY QUOTAS
+    // =========================================================================
+    function renderAdmirers() {
+      const grid = document.getElementById("admirers-grid");
+      const canSee = userPlan === "gold" || userPlan === "vip";
+
+      grid.innerHTML = ADMIRER_IDS.map(id => {
+        const p = PROFILES_DATA.find(x => x.id === id);
+        return `
+          <div onclick="${canSee ? `openProfileModal(${p.id})` : `openPremiumModal('Débloquez qui vous a liké', 'Passez à Étincelle Gold ou VIP pour voir immédiatement les 6 personnes qui ont liké votre profil.')`}"
+               class="relative rounded-2xl overflow-hidden bg-slate-900 h-56 shadow-md cursor-pointer group">
+            <img src="${p.photos[0].url}" onerror="this.src='${FALLBACK_REAL_PHOTO}'" class="w-full h-full object-cover real-photo transition ${canSee ? 'group-hover:scale-105' : 'blur-md scale-110 opacity-80'}" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+            ${!canSee ? `<div class="absolute inset-0 flex items-center justify-center"><span class="w-10 h-10 rounded-full bg-amber-400 text-slate-950 font-extrabold flex items-center justify-center shadow-lg">🔒</span></div>` : ''}
+            <div class="absolute bottom-3 inset-x-3 text-white">
+              <p class="font-extrabold text-sm">${canSee ? `${p.name}, ${p.age}` : `Profil vérifié, ${p.age}`}</p>
+              <p class="text-[11px] text-slate-300">📍 ${p.city}</p>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderMatchesList() {
+      const list = document.getElementById("matches-list");
+      list.innerHTML = matches.map(m => `
+        <button onclick="selectMatch(${m.profile.id})" class="w-full p-2.5 rounded-2xl flex items-center gap-3 text-left transition cursor-pointer ${activeMatchId === m.profile.id ? 'bg-rose-50 border border-rose-200' : 'hover:bg-slate-50'}">
+          <img src="${m.profile.photos[0].url}" onerror="this.src='${FALLBACK_REAL_PHOTO}'" class="w-12 h-12 rounded-full object-cover real-photo shrink-0" />
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-xs text-slate-900 truncate">${m.profile.name}, ${m.profile.age}</p>
+            <p class="text-[11px] text-slate-500 truncate">${m.messages[m.messages.length - 1]?.text || ''}</p>
+          </div>
+        </button>
+      `).join("");
+    }
+
+    function selectMatch(profileId) {
+      activeMatchId = profileId;
+      renderMatchesList();
+      const match = matches.find(m => m.profile.id === profileId);
+      if (!match) return;
+
+      document.getElementById("chat-header").innerHTML = `
+        <div class="flex items-center gap-2.5">
+          <img src="${match.profile.photos[0].url}" class="w-9 h-9 rounded-full object-cover real-photo" />
+          <div>
+            <p class="font-extrabold text-xs text-slate-900">${match.profile.name}, ${match.profile.age}</p>
+            <p class="text-[11px] text-emerald-600 font-semibold">● En ligne • ${match.profile.city}</p>
+          </div>
+        </div>
+        <button onclick="openProfileModal(${match.profile.id})" class="text-xs font-bold text-rose-500 hover:underline cursor-pointer">Voir profil</button>
+      `;
+
+      const msgBox = document.getElementById("chat-messages");
+      msgBox.innerHTML = match.messages.map(msg => `
+        <div class="flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}">
+          <div class="max-w-[78%] px-3.5 py-2.5 rounded-2xl text-xs ${msg.sender === 'me' ? 'gradient-brand text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'}">
+            <p>${msg.text}</p>
+            <span class="block text-[10px] mt-1 opacity-70">${msg.time}</span>
+          </div>
+        </div>
+      `).join("");
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function sendMessage(e) {
+      e.preventDefault();
+      if (!activeMatchId) return;
+      const input = document.getElementById("chat-input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      if (userPlan === "free") {
+        if (messagesRemaining <= 0) {
+          openPremiumModal("Limite quotidienne de 3 messages atteinte", "Passez à Étincelle Plus (20 msg/jour) ou Gold/VIP (illimité) pour continuer la conversation !");
+          return;
+        }
+        messagesRemaining--;
+        updateQuotaUI();
+      } else if (userPlan === "plus") {
+        if (messagesRemaining <= 0) {
+          openPremiumModal("Limite de 20 messages atteinte", "Passez à Étincelle Gold ou VIP pour envoyer des messages illimités.");
+          return;
+        }
+        messagesRemaining--;
+        updateQuotaUI();
+      }
+
+      const match = matches.find(m => m.profile.id === activeMatchId);
+      match.messages.push({ sender: "me", text, time: "Maintenant" });
+      input.value = "";
+      selectMatch(activeMatchId);
+
+      // Realistic reply simulation
+      setTimeout(() => {
+        const replies = [
+          "C'est super sympa ! Tu fais quoi de beau ce week-end ?",
+          "Haha totalement d'accord avec toi 😄 On pourrait aller prendre un café un de ces jours !",
+          "J'adore cette idée ! Tu connais un bon endroit dans le coin ?"
+        ];
+        const reply = replies[match.messages.length % replies.length];
+        match.messages.push({ sender: "them", text: reply, time: "Maintenant" });
+        if (activeMatchId === match.profile.id) selectMatch(activeMatchId);
+        renderMatchesList();
+      }, 900);
+    }
+
+    // =========================================================================
+    // 9. SUBSCRIPTION PAYWALL & CREATOR TOOLS
+    // =========================================================================
+    function updateQuotaUI() {
+      const isUnlimitedLikes = userPlan !== "free";
+      const isUnlimitedMsgs = userPlan === "gold" || userPlan === "vip";
+
+      document.getElementById("likes-left-count").textContent = isUnlimitedLikes ? "∞" : likesRemaining;
+      document.getElementById("msgs-left-count").textContent = isUnlimitedMsgs ? "∞" : messagesRemaining;
+
+      const planLabels = { free: "Gratuit", plus: "Plus ✨", gold: "Gold 👑", vip: "VIP 💎" };
+      document.getElementById("current-plan-label").textContent = planLabels[userPlan];
+    }
+
+    function openPremiumModal(title, subtitle) {
+      if (title) document.getElementById("paywall-title").textContent = title;
+      if (subtitle) document.getElementById("paywall-subtitle").textContent = subtitle;
+      document.getElementById("premium-modal").classList.remove("hidden");
+    }
+
+    function closePremiumModal() {
+      document.getElementById("premium-modal").classList.add("hidden");
+    }
+
+    function setBillingCycle(cycle) {
+      billingCycle = cycle;
+      ["monthly", "quarterly", "yearly"].forEach(c => {
+        document.getElementById(`cycle-${c}`).className = c === cycle
+          ? "px-4 py-2 rounded-xl bg-white shadow-sm text-slate-900 cursor-pointer"
+          : "px-4 py-2 rounded-xl text-slate-500 cursor-pointer";
+      });
+      const prices = {
+        monthly: { plus: "9,99 €", gold: "19,99 €", vip: "29,99 €" },
+        quarterly: { plus: "6,99 €", gold: "13,99 €", vip: "20,99 €" },
+        yearly: { plus: "4,99 €", gold: "9,99 €", vip: "14,99 €" }
+      }[cycle];
+      document.getElementById("price-plus").textContent = prices.plus;
+      document.getElementById("price-gold").textContent = prices.gold;
+      document.getElementById("price-vip").textContent = prices.vip;
+    }
+
+    function subscribeToPlan(plan) {
+      setPlan(plan);
+      closePremiumModal();
+      alert(`🎉 Abonnement Étincelle ${plan.toUpperCase()} activé ! Vos fonctionnalités sont immédiatement débloquées.`);
+    }
+
+    function setPlan(plan) {
+      userPlan = plan;
+      if (plan === "free") {
+        likesRemaining = 5;
+        messagesRemaining = 3;
+      } else if (plan === "plus") {
+        messagesRemaining = 20;
+      }
+      updateQuotaUI();
+      renderAdmirers();
+    }
+
+    function resetFreeQuotas() {
+      userPlan = "free";
+      likesRemaining = 5;
+      messagesRemaining = 3;
+      updateQuotaUI();
+      renderAdmirers();
+      alert("Quotas gratuits réinitialisés : 5 likes et 3 messages disponibles.");
+    }
+
+    function exhaustQuotasDemo() {
+      userPlan = "free";
+      likesRemaining = 0;
+      messagesRemaining = 0;
+      updateQuotaUI();
+      openPremiumModal("Vos quotas gratuits du jour sont épuisés", "Voici ce que voient vos utilisateurs lorsqu'ils atteignent la limite de 5 likes ou 3 messages.");
+    }
+
+    // =========================================================================
+    // 10. REAL LOCAL PHOTO UPLOADER (OWNER / ADMIN TOOL)
+    // =========================================================================
+    function populateAdminProfileSelect() {
+      const sel = document.getElementById("admin-profile-select");
+      if (!sel) return;
+      sel.innerHTML = PROFILES_DATA.map(p => `<option value="${p.id}">${p.name} (${p.age} ans, ${p.city})</option>`).join("");
+    }
+
+    function handleLocalPhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const profileId = Number(document.getElementById("admin-profile-select").value);
+      const slot = Number(document.getElementById("admin-photo-slot").value);
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        const prof = PROFILES_DATA.find(p => p.id === profileId);
+        if (prof) {
+          prof.photos[slot] = { url: dataUrl, caption: "Photo réelle importée • Vérifiée" };
+          try {
+            const saved = JSON.parse(localStorage.getItem("etincelle_custom_photos") || "{}");
+            if (!saved[profileId]) saved[profileId] = {};
+            saved[profileId][slot] = dataUrl;
+            localStorage.setItem("etincelle_custom_photos", JSON.stringify(saved));
+          } catch (err) {}
+          renderCurrentCard();
+          renderAdmirers();
+          alert(`✅ Photo réelle mise à jour pour ${prof.name} (Photo ${slot + 1}) !`);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // =========================================================================
+    // 11. NAVIGATION & MATCH MODAL HELPERS
+    // =========================================================================
+    function switchView(view) {
+      ["discover", "likes", "matches", "profile"].forEach(v => {
+        document.getElementById(`view-${v}`).classList.toggle("hidden", v !== view);
+        const navBtn = document.getElementById(`nav-${v}`);
+        navBtn.className = v === view
+          ? "flex flex-col items-center justify-center text-rose-500 font-bold text-xs gap-0.5 cursor-pointer"
+          : "flex flex-col items-center justify-center text-slate-400 hover:text-slate-700 font-semibold text-xs gap-0.5 cursor-pointer";
+      });
+      if (view === "matches" && !activeMatchId && matches.length > 0) {
+        selectMatch(matches[0].profile.id);
+      }
+    }
+
+    function showMatchModal(profile) {
+      lastMatchedProfile = profile;
+      document.getElementById("match-modal-text").textContent = `Vous et ${profile.name} vous êtes mutuellement likés !`;
+      document.getElementById("match-user-img").src = currentUser.avatar;
+      document.getElementById("match-target-img").src = profile.photos[0].url;
+      document.getElementById("match-modal").classList.remove("hidden");
+    }
+
+    function closeMatchModal() {
+      document.getElementById("match-modal").classList.add("hidden");
+    }
+
+    function goToMatchChat() {
+      closeMatchModal();
+      switchView("matches");
+      if (lastMatchedProfile) selectMatch(lastMatchedProfile.id);
+    }
+
+    // Boot
+    loadCustomPhotos();
+    autoDetectCountryAndLanguage();
+  </script>
+</body>
+</html>
