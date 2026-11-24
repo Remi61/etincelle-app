@@ -1,0 +1,21 @@
+{
+  "name": "etincelle-dating-app",
+  "version": "2.0.0",
+  "description": "Application de rencontre full-stack temps réel avec statut en ligne, notifications de likes, brise-glaces et base cloud permanente.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
